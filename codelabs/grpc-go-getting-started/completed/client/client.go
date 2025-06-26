@@ -28,14 +28,11 @@ func main() {
 	// Create a new RouteGuide stub.
 	client := pb.NewRouteGuideClient(conn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
 	point := &pb.Point{Latitude: 409146138, Longitude: -746188906}
 	log.Printf("Getting feature for point (%d, %d)", point.Latitude, point.Longitude)
 
 	// Call GetFeature method on the client.
-	feature, err := client.GetFeature(ctx, point)
+	feature, err := client.GetFeature(context.TODO(), point)
 	if err != nil {
 		log.Fatalf("client.GetFeature failed: %v", err)
 	}
