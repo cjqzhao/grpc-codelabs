@@ -72,7 +72,7 @@ go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 export PATH="$PATH:$(go env GOPATH)/bin"
 ```
 
-* Use [this as a starting point](https://download-directory.github.io/?url=https%3A%2F%2Fgithub.com%2Fgrpc-ecosystem%2Fgrpc-codelabs%2Ftree%2Fmain%2Fcodelabs%2FGetting\_Started\_with\_gRPC\_Go) for this codelab.
+* Use [this as a starting point](https://download-directory.github.io/?url=https%3A%2F%2Fgithub.com%2Fgrpc-ecosystem%2Fgrpc-codelabs%2Ftree%2Fmain%2Fcodelabs%2Fgrpc-go-getting-started%2Fstart_here) for this codelab.
 
 ## Defining protobuf messages and services
 
