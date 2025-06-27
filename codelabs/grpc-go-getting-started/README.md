@@ -55,6 +55,7 @@ and easy interface updating.
     * For installation instructions, see Go’s [Getting Started](https://golang.org/doc/install) guide.
 * [**Protocol buffer**](https://developers.google.com/protocol-buffers) **compiler**, `protoc`, [version 3](https://protobuf.dev/programming-guides/proto3).
     * For installation instructions, see [Protocol Buffer Compiler Installation](https://grpc.io/docs/protoc-installation/).
+    * NOTE: Must need a version of Protoc 3.27.1 or higher. Follow "Install Pre-compiled Binaries" instructions for the correct version.
 * **Go plugins** for the protocol compiler:
     * Install the protocol compiler plugins for Go using the following commands.
 
