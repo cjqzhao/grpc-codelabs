@@ -386,31 +386,31 @@ Finally, let’s look at our bidirectional streaming RPC `RouteChat()`.
 
 ```go
 func (s *routeGuideServer) RouteChat(stream pb.RouteGuide_RouteChatServer) error {
-	for {
-		in, err := stream.Recv()
-		if err == io.EOF {
-			return nil
-		}
-		if err != nil {
-			return err
-		}
-		key := serialize(in.Location)
+for {
+in, err := stream.Recv()
+if err == io.EOF {
+  return nil
+}
+if err != nil {
+  return err
+}
+key := serialize(in.Location)
 
-		s.mu.Lock()
-		s.routeNotes[key] = append(s.routeNotes[key], in)
-		// Note: this copy prevents blocking other clients while serving this one.
-		// We don't need to do a deep copy, because elements in the slice are
-		// insert-only and never modified.
-		rn := make([]*pb.RouteNote, len(s.routeNotes[key]))
-		copy(rn, s.routeNotes[key])
-		s.mu.Unlock()
+s.mu.Lock()
+s.routeNotes[key] = append(s.routeNotes[key], in)
+// Note: this copy prevents blocking other clients while serving this one.
+// We don't need to do a deep copy, because elements in the slice are
+// insert-only and never modified.
+rn := make([]*pb.RouteNote, len(s.routeNotes[key]))
+copy(rn, s.routeNotes[key])
+s.mu.Unlock()
 
-		for _, note := range rn {
-			if err := stream.Send(note); err != nil {
-				return err
-			}
-		}
-	}
+for _, note := range rn {
+  if err := stream.Send(note); err != nil {
+    return err
+  }
+}
+}
 }
 ```
 
