@@ -29,9 +29,6 @@ func main() {
 	// Create a new RouteGuide stub.
 	client := pb.NewRouteGuideClient(conn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
 	///////////////////////////////////////////////////////////////////////////
 	// Server-to-Client Streaming RPC
 	//
@@ -42,7 +39,7 @@ func main() {
 		Hi: &pb.Point{Latitude: 420000000, Longitude: -730000000},
 	}
 	log.Printf("Looking for features within %v", rect)
-	stream, err := client.ListFeatures(ctx, rect)
+	stream, err := client.ListFeatures(context.Background(), rect)
 	if err != nil {
 		log.Fatalf("client.ListFeatures failed: %v", err)
 	}
@@ -74,7 +71,7 @@ func main() {
 	}
 	log.Printf("Traversing %d points.", len(points))
 	// Call RecordRoute method on the client.
-	c2sStream, err := client.RecordRoute(ctx)
+	c2sStream, err := client.RecordRoute(context.Background())
 	if err != nil {
 		log.Fatalf("client.RecordRoute failed: %v", err)
 	}
@@ -105,7 +102,7 @@ func main() {
 		{Location: &pb.Point{Latitude: 0, Longitude: 3}, Message: "Sixth message"},
 	}
 	// Call RouteChat method on the client.
-	biDiStream, err := client.RouteChat(ctx)
+	biDiStream, err := client.RouteChat(context.Background())
 	if err != nil {
 		log.Fatalf("client.RouteChat failed: %v", err)
 	}

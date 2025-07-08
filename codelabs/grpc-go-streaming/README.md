@@ -55,6 +55,7 @@ and easy interface updating.
     * For installation instructions, see Go’s [Getting Started](https://golang.org/doc/install) guide.
 * [**Protocol buffer**](https://developers.google.com/protocol-buffers) **compiler**, `protoc`, [version 3](https://protobuf.dev/programming-guides/proto3).
     * For installation instructions, see [Protocol Buffer Compiler Installation](https://grpc.io/docs/protoc-installation/).
+    * NOTE: Must need a version of Protoc 3.27.1 or higher.
 * **Go plugins** for the protocol compiler:
     * Install the protocol compiler plugins for Go using the following commands.
 
@@ -340,33 +341,33 @@ method and return its single response using its `SendAndClose()` method.
 ```go
 func (s *routeGuideServer) RecordRoute(stream pb.RouteGuide_RecordRouteServer) error {
   var pointCount, featureCount, distance int32
-  var lastPoint *pb.Point
-  startTime := time.Now()
-  for {
-    point, err := stream.Recv()
-    if err == io.EOF {
-      endTime := time.Now()
-      return stream.SendAndClose(&pb.RouteSummary{
-        PointCount:   pointCount,
-        FeatureCount: featureCount,
-        Distance:     distance,
-        ElapsedTime:  int32(endTime.Sub(startTime).Seconds()),
-      })
-    }
-    if err != nil {
-      return err
-    }
-    pointCount++
-    for _, feature := range s.savedFeatures {
-      if proto.Equal(feature.Location, point) {
-        featureCount++
-      }
-    }
-    if lastPoint != nil {
-      distance += calcDistance(lastPoint, point)
-    }
-    lastPoint = point
-  }
+	var lastPoint *pb.Point
+	startTime := time.Now()
+	for {
+		point, err := stream.Recv()
+		if err == io.EOF {
+			endTime := time.Now()
+			return stream.SendAndClose(&pb.RouteSummary{
+				PointCount:   pointCount,
+				FeatureCount: featureCount,
+				Distance:     distance,
+				ElapsedTime:  int32(endTime.Sub(startTime).Seconds()),
+			})
+		}
+		if err != nil {
+			return err
+		}
+		pointCount++
+		for _, feature := range s.savedFeatures {
+			if proto.Equal(feature.Location, point) {
+				featureCount++
+			}
+		}
+		if lastPoint != nil {
+			distance += calcDistance(lastPoint, point)
+		}
+		lastPoint = point
+	}
 }
 ```
 
@@ -386,21 +387,30 @@ Finally, let’s look at our bidirectional streaming RPC `RouteChat()`.
 ```go
 func (s *routeGuideServer) RouteChat(stream pb.RouteGuide_RouteChatServer) error {
   for {
-    in, err := stream.Recv()
-    if err == io.EOF {
-      return nil
-    }
-    if err != nil {
-      return err
-    }
-    key := serialize(in.Location)
-                ... // look for notes to be sent to client
-    for _, note := range s.routeNotes[key] {
-      if err := stream.Send(note); err != nil {
-        return err
-      }
-    }
-  }
+		in, err := stream.Recv()
+		if err == io.EOF {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		key := serialize(in.Location)
+
+		s.mu.Lock()
+		s.routeNotes[key] = append(s.routeNotes[key], in)
+		// Note: this copy prevents blocking other clients while serving this one.
+		// We don't need to do a deep copy, because elements in the slice are
+		// insert-only and never modified.
+		rn := make([]*pb.RouteNote, len(s.routeNotes[key]))
+		copy(rn, s.routeNotes[key])
+		s.mu.Unlock()
+
+		for _, note := range rn {
+			if err := stream.Send(note); err != nil {
+				return err
+			}
+		}
+	}
 }
 ```
 
@@ -424,16 +434,16 @@ do this for our `RouteGuide` service:
 >  port can be configured by passing in `port` flag. Defaults to `50051`
 
 ```go
-lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", port))
+lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", *port))
 if err != nil {
   log.Fatalf("failed to listen: %v", err)
 }
-var opts []grpc.ServerOption
-grpcServer := grpc.NewServer(opts...)
 
-s := &routeGuideServer{}
+grpcServer := grpc.NewServer()
+
+s := &routeGuideServer{routeNotes: make(map[string][]*pb.RouteNote)}
 s.loadFeatures()
-pb.RegisterRouteGuideServer(grpcServer, newServer())
+pb.RegisterRouteGuideServer(grpcServer, s)
 grpcServer.Serve(lis)
 ```
 
@@ -464,6 +474,7 @@ with the server. We create this by passing the server address and port number to
 >  serverAddr can be configured by passing in `addr` flag. Defaults to `localhost:50051`
 
 ```go
+// Set up a connection to the gRPC server.
 conn, err := grpc.NewClient("dns:///"+*serverAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 if err != nil {
   log.Fatalf("fail to dial: %v", err)
@@ -480,6 +491,7 @@ making Go function calls. We get it using the `NewRouteGuideClient` method
 provided by the pb package generated from the example `.proto` file.
 
 ```go
+// Create a new RouteGuide stub.
 client := pb.NewRouteGuideClient(conn)
 ```
 
@@ -495,20 +507,27 @@ Here’s where we call the server-side streaming method `ListFeatures`, which
 returns a stream of geographical `Feature`s.
 
 ```go
-rect := &pb.Rectangle{ ... }  // initialize a pb.Rectangle
+rect := &pb.Rectangle{
+  Lo: &pb.Point{Latitude: 400000000, Longitude: -750000000},
+  Hi: &pb.Point{Latitude: 420000000, Longitude: -730000000},
+}
+log.Printf("Looking for features within %v", rect)
 stream, err := client.ListFeatures(context.Background(), rect)
 if err != nil {
-  ...
+  log.Fatalf("client.ListFeatures failed: %v", err)
 }
 for {
-    feature, err := stream.Recv()
-    if err == io.EOF {
-        break
-    }
-    if err != nil {
-        log.Fatalf("%v.ListFeatures(_) = _, %v", client, err)
-    }
-    log.Println(feature)
+  // For server-to-client streaming RPCs, you call stream.Recv() until it
+  // returns io.EOF.
+  feature, err := stream.Recv()
+  if err == io.EOF {
+    break
+  }
+  if err != nil {
+    log.Fatalf("client.ListFeatures failed: %v", err)
+  }
+  log.Printf("Feature: name: %q, point:(%v, %v)", feature.GetName(),
+    feature.GetLocation().GetLatitude(), feature.GetLocation().GetLongitude())
 }
 ```
 
@@ -572,29 +591,36 @@ return values via our method’s stream while the server is still writing messag
 to their message stream.
 
 ```go
-stream, err := client.RouteChat(context.Background())
-waitc := make(chan struct{})
+biDiStream, err := client.RouteChat(context.Background())
+if err != nil {
+  log.Fatalf("client.RouteChat failed: %v", err)
+}
+// this channal is used to wait for the receive goroutine to finish.
+recvDoneCh := make(chan struct{})
+// receive goroutine.
 go func() {
   for {
-    in, err := stream.Recv()
+    in, err := biDiStream.Recv()
     if err == io.EOF {
       // read done.
-      close(waitc)
+      close(recvDoneCh)
       return
     }
     if err != nil {
-      log.Fatalf("Failed to receive a note : %v", err)
+      log.Fatalf("client.RouteChat failed: %v", err)
     }
     log.Printf("Got message %s at point(%d, %d)", in.Message, in.Location.Latitude, in.Location.Longitude)
   }
 }()
+// send messages simultaneously.
 for _, note := range notes {
-  if err := stream.Send(note); err != nil {
-    log.Fatalf("Failed to send a note: %v", err)
+  if err := biDiStream.Send(note); err != nil {
+    log.Fatalf("client.RouteChat: stream.Send(%v) failed: %v", note, err)
   }
 }
-stream.CloseSend()
-<-waitc
+biDiStream.CloseSend()
+// wait for the receive goroutine to finish.
+<-recvDoneCh
 ```
 
 The syntax for reading and writing here is very similar to our client-side
