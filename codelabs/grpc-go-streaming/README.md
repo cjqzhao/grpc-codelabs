@@ -228,7 +228,7 @@ rpc RouteChat(stream RouteNote) returns (stream RouteNote) {}
 ```
 
 > [!TIP]
->  For the complete .proto file, see [routeguide/route_guide.proto](/completed/routeguide/route_guide.proto).
+>  For the complete .proto file, see [routeguide/route_guide.proto](https://github.com/grpc-ecosystem/grpc-codelabs/blob/bdabe90d07065752a66cf449c2513803b35e6cd3/codelabs/grpc-go-streaming/completed/routeguide/route_guide.pb.go).
 
 ## Generating client and server code
 
@@ -555,18 +555,20 @@ for i := 0; i < pointCount; i++ {
   points = append(points, randomPoint(r))
 }
 log.Printf("Traversing %d points.", len(points))
-stream, err := client.RecordRoute(context.Background())
+c2sStream, err := client.RecordRoute(context.TODO())
 if err != nil {
-  log.Fatalf("%v.RecordRoute(_) = _, %v", client, err)
+  log.Fatalf("client.RecordRoute failed: %v", err)
 }
+// Stream each point to the server.
 for _, point := range points {
-  if err := stream.Send(point); err != nil {
-    log.Fatalf("%v.Send(%v) = %v", stream, point, err)
+  if err := c2sStream.Send(point); err != nil {
+    log.Fatalf("client.RecordRoute: stream.Send(%v) failed: %v", point, err)
   }
 }
-reply, err := stream.CloseAndRecv()
+// Close the stream and receive the RouteSummary from the server.
+reply, err := c2sStream.CloseAndRecv()
 if err != nil {
-  log.Fatalf("%v.CloseAndRecv() got error %v, want %v", stream, err, nil)
+  log.Fatalf("client.RecordRoute failed: %v", err)
 }
 log.Printf("Route summary: %v", reply)
 ```
