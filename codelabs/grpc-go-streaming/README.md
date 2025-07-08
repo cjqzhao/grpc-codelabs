@@ -507,10 +507,7 @@ Here’s where we call the server-side streaming method `ListFeatures`, which
 returns a stream of geographical `Feature`s.
 
 ```go
-rect := &pb.Rectangle{
-  Lo: &pb.Point{Latitude: 400000000, Longitude: -750000000},
-  Hi: &pb.Point{Latitude: 420000000, Longitude: -730000000},
-}
+rect := &pb.Rectangle{ ... }  // initialize a pb.Rectangle
 log.Printf("Looking for features within %v", rect)
 stream, err := client.ListFeatures(context.Background(), rect)
 if err != nil {
