@@ -55,6 +55,7 @@ and easy interface updating.
     * For installation instructions, see Go’s [Getting Started](https://golang.org/doc/install) guide.
 * [**Protocol buffer**](https://developers.google.com/protocol-buffers) **compiler**, `protoc`, [version 3](https://protobuf.dev/programming-guides/proto3).
     * For installation instructions, see [Protocol Buffer Compiler Installation](https://grpc.io/docs/protoc-installation/).
+    * NOTE: Must need a version of Protoc 3.27.1 or higher.
 * **Go plugins** for the protocol compiler:
     * Install the protocol compiler plugins for Go using the following commands.
 
@@ -72,7 +73,7 @@ go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 export PATH="$PATH:$(go env GOPATH)/bin"
 ```
 
-* Use [this as a starting point](https://download-directory.github.io/?url=https%3A%2F%2Fgithub.com%2Fgrpc-ecosystem%2Fgrpc-codelabs%2Ftree%2Fmain%2Fcodelabs%2FGetting\_Started\_with\_gRPC\_Go) for this codelab.
+* Use [this as a starting point](https://download-directory.github.io/?url=https%3A%2F%2Fgithub.com%2Fgrpc-ecosystem%2Fgrpc-codelabs%2Ftree%2Fmain%2Fcodelabs%2Fgrpc-go-getting-started%2Fstart_here) for this codelab.
 
 ## Defining protobuf messages and services
 
@@ -304,9 +305,12 @@ the server to respond, and will either return a response or an error.
 Calling the simple RPC `GetFeature` is nearly as straightforward as calling a local method.
 
 ```go
-feature, err := client.GetFeature(context.Background(), &pb.Point{Latitude: 409146138, Longitude: -746188906})
+point := &pb.Point{Latitude: 409146138, Longitude: -746188906}
+log.Printf("Getting feature for point (%d, %d)", point.Latitude, point.Longitude)
+// Call GetFeature method on the client.
+feature, err := client.GetFeature(context.TODO(), point)
 if err != nil {
-    ...
+  log.Fatalf("client.GetFeature failed: %v", err)
 }
 ```
 
