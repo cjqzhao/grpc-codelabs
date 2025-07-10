@@ -1,0 +1,50 @@
+[package]
+edition = "2021"
+license = "MIT"
+name = "getting-started"
+
+[[bin]]
+name = "routeguide-server"
+path = "src/server/server.rs"
+
+[[bin]]
+name = "routeguide-client"
+path = "src/client/client.rs"
+
+[features]
+routeguide = ["dep:async-stream", "dep:tokio-stream", "dep:rand", "dep:serde", "dep:serde_json"]
+full = ["routeguide"]
+default = ["full"]
+
+[dependencies]
+# Common dependencies
+tokio = { version = "1.0", features = ["rt-multi-thread", "macros"] }
+prost = "0.14"
+tonic = { path = "../tonic" }
+# Optional dependencies
+tonic-web = { path = "../tonic-web", optional = true }
+tonic-health = { path = "../tonic-health", optional = true }
+tonic-reflection = { path = "../tonic-reflection", optional = true }
+tonic-types = { path = "../tonic-types", optional = true }
+async-stream = { version = "0.3", optional = true }
+tokio-stream = { version = "0.1", optional = true }
+tokio-util = { version = "0.7.8", optional = true }
+tower = { version = "0.5", optional = true }
+rand = { version = "0.9", optional = true }
+serde = { version = "1.0", features = ["derive"], optional = true }
+serde_json = { version = "1.0", optional = true }
+tracing = { version = "0.1.16", optional = true }
+tracing-subscriber = { version = "0.3", features = ["tracing-log", "fmt"], optional = true }
+prost-types = { version = "0.14", optional = true }
+http = { version = "1", optional = true }
+hyper = { version = "1", optional = true }
+hyper-util = { version = "0.1.4", optional = true }
+listenfd = { version = "1.0", optional = true }
+bytes = { version = "1", optional = true }
+h2 = { version = "0.4", optional = true }
+tokio-rustls = { version = "0.26.1", optional = true, features = ["ring", "tls12"], default-features = false }
+hyper-rustls = { version = "0.27.0", features = ["http2", "ring", "tls12"], optional = true, default-features = false }
+tower-http = { version = "0.6", optional = true }
+
+[build-dependencies]
+tonic-build = { path = "../tonic-build", features = ["prost"] }
