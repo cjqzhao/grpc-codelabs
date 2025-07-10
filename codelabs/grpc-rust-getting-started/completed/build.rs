@@ -1,6 +1,9 @@
 fn main() {
-    tonic_build::configure()
-        .compile_protos(&["routeguide/routeguide.proto"], &["proto"])
+    tonic_protobuf_build::CodeGen::new()
+        .include("src/routeguide")
+        .inputs(["routeguide.proto"])
+        .generate_and_compile()
         .unwrap();
 }
+
 
