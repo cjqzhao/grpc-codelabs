@@ -22,25 +22,27 @@ package routeguide;
 
 // Interface exported by the server.
 service RouteGuide {
-  /////////////////////////////////////////////////////////////////////////////
-  // Codelab Hint: Define RPC methods here
-  /////////////////////////////////////////////////////////////////////////////
+  // A simple RPC.
+  //
+  // Obtains the feature at a given position.
+  //
+  // A feature with an empty name is returned if there's no feature at the given
+  // position.
+  rpc GetFeature(Point) returns (Feature) {}
 }
 
 message Point {
-  /////////////////////////////////////////////////////////////////////////////
-  // Codelab Hint: Define RPC methods here
-  /////////////////////////////////////////////////////////////////////////////
+  int32 latitude = 1;
+  int32 longitude = 2;
 }
 
 // A feature names something at a given point.
 //
 // If a feature could not be named, the name is empty.
 message Feature {
-  /////////////////////////////////////////////////////////////////////////////
-  // Codelab Hint: Define RPC methods here
-  /////////////////////////////////////////////////////////////////////////////
+  // The name of the feature.
+  string name = 1;
+
+  // The point where the feature is detected.
+  Point location = 2;
 }
-
-
-
