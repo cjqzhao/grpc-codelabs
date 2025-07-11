@@ -309,7 +309,7 @@ do this for our `RouteGuide` service:
 > [!NOTE]
 >  port can be configured by passing in `port` flag. Defaults to `50051`
 
-First, import the necessary Crates and also use the data module to instantiate a RouteGuideService. Then, fill in main().
+The features that RouteGuideService will instianted with will be from `route_guide_db.json` and will need a helper function from `data.rs`. Uncomment the load function in `data.rs`. Then, fill in main().
 
 ```rust
 mod data;
