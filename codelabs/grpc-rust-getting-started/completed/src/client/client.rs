@@ -3,9 +3,9 @@ use tonic::Request;
 use routeguide::route_guide_client::RouteGuideClient;
 use routeguide::{Point};
 
-pub mod routeguide {
-    tonic::include_proto!("routeguide");
-}
+// pub mod routeguide {
+//     tonic::include_proto!("routeguide/routeguide");
+// }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -22,3 +22,4 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+

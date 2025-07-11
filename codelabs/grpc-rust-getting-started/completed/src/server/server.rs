@@ -7,7 +7,7 @@ use routeguide::route_guide_server::{RouteGuide, RouteGuideServer};
 use routeguide::{Feature, Point};
 
 pub mod routeguide {
-    tonic::include_proto!("routeguide");
+    tonic::include_proto!("routeguide/routeguide");
 }
 mod data;
 
@@ -47,4 +47,3 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
-
