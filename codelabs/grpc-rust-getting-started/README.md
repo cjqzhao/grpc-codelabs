@@ -230,55 +230,65 @@ soon! We can now move on to the fun part.
 
 First let’s look at how we create a `RouteGuide` server. There are two parts to
 making our `RouteGuide` service do its job:
-
-* Implementing the service interface generated from our service definition:
-  doing the actual “work” of our service.
-* Running a gRPC server to listen for requests from clients and dispatch them to
-  the right service implementation.
+* Implementing the service trait generated from our service definition.
+* Running a gRPC server to listen for requests from clients.
 
 > [!TIP]
 >  For the complete server implementation, see [server.go](completed/server/server.go)
 
-Let’s implement RouteGuide in `server/server.go`
+Let’s implement RouteGuide in `server/server.rs`. `server.rs` has code that is commented out in order to generate code from the proto file. Please uncomment the code starting at this step.
 
 ### Implementing RouteGuide
 
-We need to implement the generated `RouteGuideService` interface. This is how
-the implementation would look
+WWe can start by defining a struct to represent our service, we can do this on `main.rs` for now:
 
-> [!Note]
->  The starter code already has helper function which will load features into the routeGuideServer's savedFeatures field.
-
-```go
-type routeGuideServer struct {
-        ...
-}
-...
-
-func (s *routeGuideServer) GetFeature(ctx context.Context, point *pb.Point) (*pb.Feature, error) {
-        ...
-}
+```rust
+#[derive(Debug)]
+struct RouteGuideService;
 ```
 
-Let us look into the RPC implementation in detail
+Next, we need to implement the `route_guide_server::RouteGuide` trait that is generated in our build step.
+The generated code is placed inside our target directory, in a location defined by the `OUT_DIR`
+environment variable that is set by cargo. For our example, this means you can find the generated
+code in a path similar to `target/debug/build/routeguide/out/routeguide.rs`.
+
+You can learn more about `build.rs` and the `OUT_DIR` environment variable in the [cargo book].
+
+We can use Tonic's `include_proto` macro to bring the generated code into scope:
+
+```rust
+pub mod routeguide {
+    tonic::include_proto!("routeguide");
+}
+
+use routeguide::route_guide_server::{RouteGuide, RouteGuideServer};
+use routeguide::{Feature, Point};
+```
+
+**Note**: The token passed to the `include_proto` macro (in our case "routeguide") is the name of
+the package declared in our `.proto` file, not a filename, e.g "routeguide.rs".
+
+With this in place, we can stub out our service implementation:
 
 #### Unary RPC
 
 The `routeGuideServer` implements all our service methods. Let’s look at
-`GetFeature` which just gets a `Point` from the client and returns the
+`get_feature` which just gets a `Point` from the client and returns the
 corresponding feature information from its database in a `Feature`.
 
-```go
-func (s *routeGuideServer) GetFeature(ctx context.Context, point *pb.Point) (*pb.Feature, error) {
-  for _, feature := range s.savedFeatures {
-    if proto.Equal(feature.Location, point) {
-      return feature, nil
+```rust
+#[tonic::async_trait]
+impl RouteGuide for RouteGuideService {
+    async fn get_feature(&self, request: Request<Point>) -> Result<Response<Feature>, Status> {
+        println!("GetFeature = {:?}", request);
+        for feature in &self.features[..] {
+            if feature.location.as_ref() == Some(request.get_ref()) {
+                return Ok(Response::new(feature.clone()));
+            }
+        }
+        Ok(Response::new(Feature::default()))
     }
-  }
-  // No feature was found, return an unnamed feature
-  return &pb.Feature{Location: point}, nil
 }
-
 ```
 
 The method is passed a context object for the RPC and the client’s `Point`
@@ -297,28 +307,27 @@ do this for our `RouteGuide` service:
 > [!NOTE]
 >  port can be configured by passing in `port` flag. Defaults to `50051`
 
-```go
-lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", *port))
-if err != nil {
-  log.Fatalf("failed to listen: %v", err)
+```rust
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let addr = "[::1]:10000".parse().unwrap();
+    println!("RouteGuideServer listening on: {addr}");
+    let route_guide = RouteGuideService {
+        features: Arc::new(data::load()),
+    };
+    let svc = RouteGuideServer::new(route_guide);
+    Server::builder().add_service(svc).serve(addr).await?;
+    Ok(())
 }
-var opts []grpc.ServerOption
-grpcServer := grpc.NewServer(opts...)
-
-s := &routeGuideServer{}
-s.loadFeatures()
-pb.RegisterRouteGuideServer(grpcServer, s)
-grpcServer.Serve(lis)
 ```
 
 To build and start a server, we:
 
-1. Specify the port we want to use to listen for client requests using:
-   `lis, err := net.Listen(...)`
-2. Create an instance of the gRPC server using `grpc.NewServer(...)`.
-3. Use `s.loadFeatures()` to load features into `s.savedFeatures`
+1. Specify the port we want to use to listen for client requests 
+2. Create a service with features loaded in
+3. Create an instance of the gRPC server using `RouteGuideServer::new()` using the service we created.
 4. Register our service implementation with the gRPC server.
-5. Call `Serve()` on the server with our port details to do a blocking wait
+5. Call `serve()` on the server with our port details to do a blocking wait
    until the process is killed or `Stop()` is called.
 
 ## Creating the client
@@ -332,29 +341,16 @@ In this section, we’ll look at creating a Go client for our RouteGuide service
 
 To call service methods, we first need to create a gRPC *channel* to communicate
 with the server. We create this by passing the server address and port number to
-`grpc.NewClient()` as follows:
+`RouteGuideClient::connect` as follows:
 
 > [!NOTE]
 >  serverAddr can be configured by passing in `addr` flag. Defaults to `localhost:50051`
 
-```go
-conn, err := grpc.NewClient("dns:///"+*serverAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
-if err != nil {
-	log.Fatalf("fail to dial: %v", err)
+```rust
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let mut client = RouteGuideClient::connect("http://[::1]:10000").await?;
 }
-defer conn.Close()
-```
-
-You can use `DialOptions` to set the auth credentials (for example, TLS, GCE
-credentials, or JWT credentials) in `grpc.NewClient` when a service requires
-them. The `RouteGuide` service doesn’t require any credentials.
-
-Once the gRPC *channel* is set up, we need a client *stub* to perform RPCs by
-making Go function calls. We get it using the `NewRouteGuideClient` method
-provided by the pb package generated from the example `.proto` file.
-
-```go
-client := pb.NewRouteGuideClient(conn)
 ```
 
 ### Calling service methods
@@ -368,24 +364,24 @@ the server to respond, and will either return a response or an error.
 Calling the simple RPC `GetFeature` is nearly as straightforward as calling a local method.
 
 ```go
-point := &pb.Point{Latitude: 409146138, Longitude: -746188906}
-log.Printf("Getting feature for point (%d, %d)", point.Latitude, point.Longitude)
-// Call GetFeature method on the client.
-feature, err := client.GetFeature(context.TODO(), point)
-if err != nil {
-  log.Fatalf("client.GetFeature failed: %v", err)
-}
+println!("*** SIMPLE RPC ***");
+let response = client
+    .get_feature(Request::new(Point {
+        latitude: 409_146_138,
+        longitude: -746_188_906,
+    }))
+    .await?;
+Ok(())
 ```
 
 As you can see, we call the method on the stub we got earlier. In our method
 parameters we create and populate a request protocol buffer object (in our case
-`Point`). We also pass a `context.Context` object which lets us change our RPC’s
-behavior if necessary, such as time-out/cancel an RPC in flight. If the call
+`Point`). If the call
 doesn’t return an error, then we can read the response information from the
 server from the first return value.
 
-```go
-log.Println(feature)
+```rust
+println!("RESPONSE = {response:?}");
 ```
 
 ## Try it out
@@ -396,14 +392,14 @@ Execute the following commands from the working directory:
 
 ```sh
 cd server
-go run .
+cargo run --bin routeguide-server 
 ```
 
 2. Run the client from another terminal:
 
 ```sh
 cd client
-go run .
+cargo run --bin routeguide-client
 ```
 
 You’ll see output like this:
