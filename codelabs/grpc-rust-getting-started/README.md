@@ -62,7 +62,7 @@ $ git clone https://github.com/hyperium/tonic.git
     * NOTE: Must need a version of Protoc 3.27.1 or higher.
 * **Rust plugins** for the protocol compiler:
 ```sh
-$ cd tonic/protoc-gen-grpc-rust
+$ cd tonic/protoc-gen-rust-grpc
 $ bazel build //src:protoc-gen-rust-grpc
 $ PLUGIN_PATH="$(pwd)/bazel-bin/src/protoc-gen-rust-grpc"
 ```
@@ -305,9 +305,6 @@ returned to the client.
 Once we’ve implemented all our methods, we also need to start up a gRPC server
 so that clients can actually use our service. The following snippet shows how we
 do this for our `RouteGuide` service:
-
-> [!NOTE]
->  port can be configured by passing in `port` flag. Defaults to `50051`
 
 The features that RouteGuideService will instianted with will be from `route_guide_db.json` and will need a helper function from `data.rs`. Uncomment the load function in `data.rs`. Then, fill in main().
 
