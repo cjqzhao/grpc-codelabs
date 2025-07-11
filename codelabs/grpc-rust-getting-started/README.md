@@ -51,26 +51,26 @@ and easy interface updating.
 
 ### Prerequisites
 
+* [**Tonic**](https://www.rust-lang.org/), the open source repository that gRPC-Rust is based off
+```sh
+$ git clone https://github.com/hyperium/tonic.git
+```
 * [**Rust**](https://www.rust-lang.org/), any one of the **two latest major** releases of Rust.
     * Follow installation instructions [here](https://www.rust-lang.org/tools/install).
 * [**Protocol buffer**](https://developers.google.com/protocol-buffers) **compiler**, `protoc`, [version 3](https://protobuf.dev/programming-guides/proto3).
     * For installation instructions, see [Protocol Buffer Compiler Installation](https://grpc.io/docs/protoc-installation/).
     * NOTE: Must need a version of Protoc 3.27.1 or higher.
-* **Go plugins** for the protocol compiler:
-    * Install the protocol compiler plugins for Go using the following commands.
-
-```console
-# This command will install the plugin that generates code for the messages
-go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-
-# This command installs the plugin that generates code for the services and methods
-go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+* **Rust plugins** for the protocol compiler:
+```sh
+$ cd tonic/protoc-gen-grpc-rust
+$ bazel build //src:protoc-gen-rust-grpc
+$ PLUGIN_PATH="$(pwd)/bazel-bin/src/protoc-gen-rust-grpc"
 ```
 
 * Update your PATH so that the protoc compiler can find the plugins:
 
 ```sh
-export PATH="$PATH:$(go env GOPATH)/bin"
+export PATH="$(pwd)/bazel-bin/src/:$PATH"
 ```
 
 * Use [this as a starting point](https://download-directory.github.io/?url=https%3A%2F%2Fgithub.com%2Fgrpc-ecosystem%2Fgrpc-codelabs%2Ftree%2Fmain%2Fcodelabs%2Fgrpc-go-getting-started%2Fstart_here) for this codelab.
@@ -307,6 +307,12 @@ do this for our `RouteGuide` service:
 > [!NOTE]
 >  port can be configured by passing in `port` flag. Defaults to `50051`
 
+First, import the necessary Crates and also use the data module to instantiate a RouteGuideService. Then, fill in main().
+
+```rust
+mod data;
+use tonic::transport::Server;
+```
 ```rust
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -332,7 +338,29 @@ To build and start a server, we:
 
 ## Creating the client
 
-In this section, we’ll look at creating a Go client for our RouteGuide service.
+In this section, we’ll look at creating a Rust client for our RouteGuide service. You can see our complete example client code in examples/src/routeguide/client.rs.
+
+Our crate will have two binary targets: routeguide-client and routeguide-server. We need to edit our Cargo.toml accordingly:
+
+```toml
+[[bin]]
+name = "routeguide-server"
+path = "src/server/server.rs"
+
+[[bin]]
+name = "routeguide-client"
+path = "src/client/client.rs"
+```
+Like in the server case, we'll start by bringing the generated code into scope:
+
+```rust
+pub mod routeguide {
+    tonic::include_proto!("routeguide");
+}
+
+use routeguide::route_guide_client::RouteGuideClient;
+use routeguide::{Point, Rectangle, RouteNote};
+```
 
 > [!TIP]
 >  For the complete server implementation, see [client.go](completed/client/client.go)
@@ -355,7 +383,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ### Calling service methods
 
-Now let’s look at how we call our service methods. Note that in gRPC-Go, RPCs
+Now let’s look at how we call our service methods. Note that in gRPC-Rust, RPCs
 operate in a blocking/synchronous mode, which means that the RPC call waits for
 the server to respond, and will either return a response or an error.
 
@@ -363,7 +391,7 @@ the server to respond, and will either return a response or an error.
 
 Calling the simple RPC `GetFeature` is nearly as straightforward as calling a local method.
 
-```go
+```rust
 println!("*** SIMPLE RPC ***");
 let response = client
     .get_feature(Request::new(Point {
