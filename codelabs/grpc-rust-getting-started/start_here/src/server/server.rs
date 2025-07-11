@@ -6,16 +6,6 @@ use std::sync::Arc;
 // use routeguide::route_guide_server::{RouteGuide, RouteGuideServer};
 // use routeguide::{Feature, Point};
 
-// /// Brings generated code into scope.
-// pub mod routeguide {
-//     tonic::include_proto!("routeguide");
-// }
-
-// #[derive(Debug)]
-// pub struct RouteGuideService {
-//     features: Arc<Vec<Feature>>,
-// }
-
 // #[tonic::async_trait]
 // impl RouteGuide for RouteGuideService {
 //     async fn get_feature(&self, request: Request<Point>) -> Result<Response<Feature>, Status> {
