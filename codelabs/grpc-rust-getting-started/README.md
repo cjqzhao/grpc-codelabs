@@ -51,7 +51,7 @@ and easy interface updating.
 
 ### Prerequisites
 
-* [**Tonic**](https://www.rust-lang.org/), the open source repository that gRPC-Rust is based off
+* [**Tonic**](https://github.com/hyperium/tonic.git), the open source repository that gRPC-Rust is based off
 ```sh
 $ git clone https://github.com/hyperium/tonic.git
 ```
@@ -202,7 +202,7 @@ tonic-protobuf-build = {git = "https://github.com/arjan-bal/tonic.git", branch =
 ```
 Create a `build.rs` file at the root of your crate. A build.rs script is a Rust program that Cargo executes before compiling your main project. Its purpose is to perform tasks like generating source code, linking to non-Rust libraries, or setting environment variables that influence the build process.
 
-In this case, we will be putting the command to compile and build the `.proto` file in build.rs. We will use Tonic's tonic_protobuf_build crate to generate code.
+In this case, we will be putting the command to compile and build the `.proto` file in build.rs. We will use Tonic's tonic_protobuf_build crate to generate code from the `.proto` file.
 ```rust
 fn main() {
     tonic_protobuf_build::CodeGen::new()
@@ -244,7 +244,9 @@ WWe can start by defining a struct to represent our service, we can do this on `
 
 ```rust
 #[derive(Debug)]
-struct RouteGuideService;
+pub struct RouteGuideService {
+    features: Arc<Vec<Feature>>,
+}
 ```
 
 Next, we need to implement the `route_guide_server::RouteGuide` trait that is generated in our build step.
