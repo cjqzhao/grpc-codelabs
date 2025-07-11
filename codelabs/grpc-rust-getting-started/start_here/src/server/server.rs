@@ -1,11 +1,5 @@
 use std::sync::Arc;
 
-// use tonic::transport::Server;
-// use tonic::{Request, Response, Status};
-
-// use routeguide::route_guide_server::{RouteGuide, RouteGuideServer};
-// use routeguide::{Feature, Point};
-
 // #[tonic::async_trait]
 // impl RouteGuide for RouteGuideService {
 //     async fn get_feature(&self, request: Request<Point>) -> Result<Response<Feature>, Status> {
