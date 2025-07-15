@@ -1,17 +1,17 @@
-use serde::Deserialize;
-use std::fs::File;
+// use serde::Deserialize;
+// use std::fs::File;
 
-#[derive(Debug, Deserialize)]
-struct Feature {
-    location: Location,
-    name: String,
-}
+// #[derive(Debug, Deserialize)]
+// struct Feature {
+//     location: Location,
+//     name: String,
+// }
 
-#[derive(Debug, Deserialize)]
-struct Location {
-    latitude: i32,
-    longitude: i32,
-}
+// #[derive(Debug, Deserialize)]
+// struct Location {
+//     latitude: i32,
+//     longitude: i32,
+// }
 
 // #[allow(dead_code)]
 // pub fn load() -> Vec<crate::routeguide::Feature> {
