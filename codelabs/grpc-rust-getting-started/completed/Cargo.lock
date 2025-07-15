@@ -372,14 +372,11 @@ name = "getting-started"
 version = "0.0.0"
 dependencies = [
  "async-stream",
- "bytes",
  "grpc",
- "h2",
  "http",
  "hyper",
  "hyper-rustls",
  "hyper-util",
- "listenfd",
  "prost",
  "prost-types",
  "protobuf",
@@ -392,16 +389,10 @@ dependencies = [
  "tokio-util",
  "tonic",
  "tonic-build",
- "tonic-health",
  "tonic-protobuf",
  "tonic-protobuf-build",
- "tonic-reflection",
- "tonic-types",
- "tonic-web",
  "tower",
  "tower-http",
- "tracing",
- "tracing-subscriber",
 ]
 
 [[package]]
@@ -809,17 +800,6 @@ name = "linux-raw-sys"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cd945864f07fe9f5371a27ad7b52a172b4b499999f1d97574c9fa68373937e12"
-
-[[package]]
-name = "listenfd"
-version = "1.0.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b87bc54a4629b4294d0b3ef041b64c40c611097a677d9dc07b2c67739fe39dba"
-dependencies = [
- "libc",
- "uuid",
- "winapi",
-]
 
 [[package]]
 name = "litemap"
@@ -1643,7 +1623,6 @@ dependencies = [
  "futures-core",
  "pin-project-lite",
  "tokio",
- "tokio-util",
 ]
 
 [[package]]
@@ -1702,17 +1681,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "tonic-health"
-version = "0.14.0"
-source = "git+https://github.com/arjan-bal/tonic.git?branch=grpc-codegen#cd77988908444cfa392508ad025ef730bff5f22a"
-dependencies = [
- "prost",
- "tokio",
- "tokio-stream",
- "tonic",
-]
-
-[[package]]
 name = "tonic-protobuf"
 version = "0.9.0-alpha.1"
 source = "git+https://github.com/arjan-bal/tonic.git?branch=grpc-codegen#4431e832225c925d420b365c0c4175afc512d396"
@@ -1728,45 +1696,6 @@ version = "0.9.0-alpha.1"
 source = "git+https://github.com/arjan-bal/tonic.git?branch=grpc-codegen#4431e832225c925d420b365c0c4175afc512d396"
 dependencies = [
  "protobuf-codegen",
-]
-
-[[package]]
-name = "tonic-reflection"
-version = "0.14.0"
-source = "git+https://github.com/arjan-bal/tonic.git?branch=grpc-codegen#cd77988908444cfa392508ad025ef730bff5f22a"
-dependencies = [
- "prost",
- "prost-types",
- "tokio",
- "tokio-stream",
- "tonic",
-]
-
-[[package]]
-name = "tonic-types"
-version = "0.14.0"
-source = "git+https://github.com/arjan-bal/tonic.git?branch=grpc-codegen#cd77988908444cfa392508ad025ef730bff5f22a"
-dependencies = [
- "prost",
- "prost-types",
- "tonic",
-]
-
-[[package]]
-name = "tonic-web"
-version = "0.14.0"
-source = "git+https://github.com/arjan-bal/tonic.git?branch=grpc-codegen#cd77988908444cfa392508ad025ef730bff5f22a"
-dependencies = [
- "base64",
- "bytes",
- "http",
- "http-body",
- "pin-project",
- "tokio-stream",
- "tonic",
- "tower-layer",
- "tower-service",
- "tracing",
 ]
 
 [[package]]
