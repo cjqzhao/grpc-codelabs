@@ -1,0 +1,10 @@
+/usr/local/google/home/cathyjzhao/grpc-codelabs/codelabs/grpc-rust-getting-started/completed/target/debug/deps/routeguide_client-e9a8d34a906aa50a.d: src/client/client.rs /usr/local/google/home/cathyjzhao/grpc-codelabs/codelabs/grpc-rust-getting-started/completed/target/debug/build/getting-started-67aab14487146edb/out//generated.rs /usr/local/google/home/cathyjzhao/grpc-codelabs/codelabs/grpc-rust-getting-started/completed/target/debug/build/getting-started-67aab14487146edb/out/routeguide.u.pb.rs /usr/local/google/home/cathyjzhao/grpc-codelabs/codelabs/grpc-rust-getting-started/completed/target/debug/build/getting-started-67aab14487146edb/out//routeguide_grpc.pb.rs
+
+/usr/local/google/home/cathyjzhao/grpc-codelabs/codelabs/grpc-rust-getting-started/completed/target/debug/deps/routeguide_client-e9a8d34a906aa50a: src/client/client.rs /usr/local/google/home/cathyjzhao/grpc-codelabs/codelabs/grpc-rust-getting-started/completed/target/debug/build/getting-started-67aab14487146edb/out//generated.rs /usr/local/google/home/cathyjzhao/grpc-codelabs/codelabs/grpc-rust-getting-started/completed/target/debug/build/getting-started-67aab14487146edb/out/routeguide.u.pb.rs /usr/local/google/home/cathyjzhao/grpc-codelabs/codelabs/grpc-rust-getting-started/completed/target/debug/build/getting-started-67aab14487146edb/out//routeguide_grpc.pb.rs
+
+src/client/client.rs:
+/usr/local/google/home/cathyjzhao/grpc-codelabs/codelabs/grpc-rust-getting-started/completed/target/debug/build/getting-started-67aab14487146edb/out//generated.rs:
+/usr/local/google/home/cathyjzhao/grpc-codelabs/codelabs/grpc-rust-getting-started/completed/target/debug/build/getting-started-67aab14487146edb/out/routeguide.u.pb.rs:
+/usr/local/google/home/cathyjzhao/grpc-codelabs/codelabs/grpc-rust-getting-started/completed/target/debug/build/getting-started-67aab14487146edb/out//routeguide_grpc.pb.rs:
+
+# env-dep:OUT_DIR=/usr/local/google/home/cathyjzhao/grpc-codelabs/codelabs/grpc-rust-getting-started/completed/target/debug/build/getting-started-67aab14487146edb/out

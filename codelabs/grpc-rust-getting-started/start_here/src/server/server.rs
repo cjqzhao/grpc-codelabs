@@ -8,7 +8,7 @@ use routeguide::{Feature, Point};
 
 /// Brings generated code into scope.
 pub mod routeguide {
-    tonic::include_proto!("routeguide");
+    tonic::include_proto!("getting-started");
 }
 mod data;
 
