@@ -4,6 +4,7 @@ use tonic::{Request, Response, Status};
 pub mod routeguide {
     tonic::include_proto!("routeguide");
 }
+
 use routeguide::route_guide_server::{RouteGuide, RouteGuideServer};
 use routeguide::{Feature, Point};
 
