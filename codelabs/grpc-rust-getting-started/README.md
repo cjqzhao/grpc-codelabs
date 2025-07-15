@@ -199,12 +199,16 @@ protobuf = { version = "4.31.1-release"}
 
 [build-dependencies]
 tonic-protobuf-build = {git = "https://github.com/arjan-bal/tonic.git", branch = "grpc-codegen", package = "tonic-protobuf-build" }
+tonic-build = {git = "https://github.com/arjan-bal/tonic.git", branch = "grpc-codegen", package = "tonic-build" }
+
 ```
 Create a `build.rs` file at the root of your crate. A build.rs script is a Rust program that Cargo executes before compiling your main project. Its purpose is to perform tasks like generating source code, linking to non-Rust libraries, or setting environment variables that influence the build process.
 
 In this case, we will be putting the command to compile and build the `.proto` file in build.rs. We will use Tonic's tonic_protobuf_build crate to generate code from the `.proto` file.
 ```rust
 fn main() {
+    let proto = "src/routeguide/routeguide.proto";
+    tonic_build::compile_protos(proto).unwrap();
     tonic_protobuf_build::CodeGen::new()
         .include("src/routeguide")
         .inputs(["routeguide.proto"])
@@ -240,7 +244,7 @@ Let’s implement RouteGuide in `server/server.rs`. `server.rs` has code that is
 
 ### Implementing RouteGuide
 
-WWe can start by defining a struct to represent our service, we can do this on `main.rs` for now:
+We can start by defining a struct to represent our service, we can do this on `main.rs` for now:
 
 ```rust
 #[derive(Debug)]
@@ -306,7 +310,7 @@ Once we’ve implemented all our methods, we also need to start up a gRPC server
 so that clients can actually use our service. The following snippet shows how we
 do this for our `RouteGuide` service:
 
-The features that RouteGuideService will instianted with will be from `route_guide_db.json` and will need a helper function from `data.rs`. Uncomment the load function in `data.rs`. Then, fill in main().
+The features that RouteGuideService will instianted with will be from `route_guide_db.json` and will need a helper function from `data.rs`. Uncomment all the code in `data.rs`. Then, fill in main().
 
 ```rust
 mod data;
@@ -353,12 +357,17 @@ path = "src/client/client.rs"
 Like in the server case, we'll start by bringing the generated code into scope:
 
 ```rust
-pub mod routeguide {
-    tonic::include_proto!("routeguide");
+use tonic::Request;
+use tonic::transport::{Channel, Endpoint}; 
+
+pub mod route_guide_gen {
+    grpc::include_proto!("", "routeguide");
 }
 
-use routeguide::route_guide_client::RouteGuideClient;
-use routeguide::{Point, Rectangle, RouteNote};
+use route_guide_gen::{
+    route_guide_client::RouteGuideClient,
+    Point,
+};
 ```
 
 > [!TIP]
@@ -367,8 +376,8 @@ use routeguide::{Point, Rectangle, RouteNote};
 ### Creating a stub
 
 To call service methods, we first need to create a gRPC *channel* to communicate
-with the server. We create this by passing the server address and port number to
-`RouteGuideClient::connect` as follows:
+with the server. We create this by first creating an endpoint, connecting to that endpoint, and passing the channel made when connected to
+`RouteGuideClient::new` as follows:
 
 > [!NOTE]
 >  serverAddr can be configured by passing in `addr` flag. Defaults to `localhost:50051`
@@ -376,7 +385,12 @@ with the server. We create this by passing the server address and port number to
 ```rust
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mut client = RouteGuideClient::connect("http://[::1]:10000").await?;
+    //Create endpoint to connect to
+    let endpoint = Endpoint::new("http://[::1]:10000")?; 
+    let channel = endpoint.connect().await?;             
+
+    // Create a new client
+    let mut client = RouteGuideClient::new(channel); 
 }
 ```
 
@@ -392,11 +406,11 @@ Calling the simple RPC `GetFeature` is nearly as straightforward as calling a lo
 
 ```rust
 println!("*** SIMPLE RPC ***");
+let mut point = Point::new();
+point.set_latitude(409_146_138); 
+point.set_longitude(-746_188_906);
 let response = client
-    .get_feature(Request::new(Point {
-        latitude: 409_146_138,
-        longitude: -746_188_906,
-    }))
+    .get_feature(Request::new(point))
     .await?;
 Ok(())
 ```
@@ -432,10 +446,14 @@ cargo run --bin routeguide-client
 You’ll see output like this:
 
 ```
-Getting feature for point (409146138, -746188906)
-name:"Berkshire Valley Management Area Trail, Jefferson, NJ, USA" location:<latitude:409146138 longitude:-746188906 >
-Getting feature for point (0, 0)
-location:<>
+*** SIMPLE RPC ***
+
+RESPONSE = Response { metadata: MetadataMap { headers: {"content-type": "application/grpc", "date": "Tue, 15 Jul 2025 00:19:02 GMT", "grpc-status": "0"} }, message: 1: "Berkshire Valley Management Area Trail, Jefferson, NJ, USA"
+2 {
+  1: 409146138
+  2: -746188906
+}
+, extensions: Extensions }
 ```
 > [!NOTE]
 > We’ve omitted timestamps from the client and server trace output shown in this page
