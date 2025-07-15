@@ -159,6 +159,13 @@ edition = "2021"
 license = "MIT"
 name = "getting-started"
 
+[[bin]]
+name = "routeguide-server"
+path = "src/server/server.rs"
+
+[[bin]]
+name = "routeguide-client"
+path = "src/client/client.rs"
 
 [features]
 routeguide = ["dep:async-stream", "dep:tokio-stream", "dep:rand", "dep:serde", "dep:serde_json"]
@@ -169,12 +176,11 @@ default = ["full"]
 # Common dependencies
 tokio = { version = "1.0", features = ["rt-multi-thread", "macros"] }
 prost = "0.14"
-tonic = { git = "https://github.com/hyperium/tonic.git", branch = "master" }
+tonic = { git = "https://github.com/arjan-bal/tonic.git", branch = "grpc-codegen" }
+tonic-protobuf = {git = "https://github.com/arjan-bal/tonic.git", branch = "grpc-codegen", package = "tonic-protobuf" }
+grpc = {git = "https://github.com/arjan-bal/tonic.git", branch = "grpc-codegen", package = "grpc"}
+
 # Optional dependencies
-tonic-web = { git = "https://github.com/hyperium/tonic.git", branch = "master", package = "tonic-web", optional = true }
-tonic-health = { git = "https://github.com/hyperium/tonic.git", branch = "master", package = "tonic-health", optional = true }
-tonic-reflection = { git = "https://github.com/hyperium/tonic.git", branch = "master", package = "tonic-reflection", optional = true }
-tonic-types = { git = "https://github.com/hyperium/tonic.git", branch = "master", package = "tonic-types", optional = true }
 async-stream = { version = "0.3", optional = true }
 tokio-stream = { version = "0.1", optional = true }
 tokio-util = { version = "0.7.8", optional = true }
@@ -182,25 +188,18 @@ tower = { version = "0.5", optional = true }
 rand = { version = "0.9", optional = true }
 serde = { version = "1.0", features = ["derive"], optional = true }
 serde_json = { version = "1.0", optional = true }
-tracing = { version = "0.1.16", optional = true }
-tracing-subscriber = { version = "0.3", features = ["tracing-log", "fmt"], optional = true }
 prost-types = { version = "0.14", optional = true }
 http = { version = "1", optional = true }
 hyper = { version = "1", optional = true }
 hyper-util = { version = "0.1.4", optional = true }
-listenfd = { version = "1.0", optional = true }
-bytes = { version = "1", optional = true }
-h2 = { version = "0.4", optional = true }
 tokio-rustls = { version = "0.26.1", optional = true, features = ["ring", "tls12"], default-features = false }
 hyper-rustls = { version = "0.27.0", features = ["http2", "ring", "tls12"], optional = true, default-features = false }
 tower-http = { version = "0.6", optional = true }
 protobuf = { version = "4.31.1-release"}
 
-
 [build-dependencies]
 tonic-protobuf-build = {git = "https://github.com/arjan-bal/tonic.git", branch = "grpc-codegen", package = "tonic-protobuf-build" }
 tonic-build = {git = "https://github.com/arjan-bal/tonic.git", branch = "grpc-codegen", package = "tonic-build" }
-
 ```
 Create a `build.rs` file at the root of your crate. A build.rs script is a Rust program that Cargo executes before compiling your main project. Its purpose is to perform tasks like generating source code, linking to non-Rust libraries, or setting environment variables that influence the build process.
 
