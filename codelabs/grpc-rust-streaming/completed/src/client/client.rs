@@ -30,7 +30,12 @@ async fn print_features(client: &mut RouteGuideClient<Channel>) -> Result<(), Bo
         .into_inner();
 
     while let Some(feature) = stream.message().await? {
-        println!("FEATURE = {feature:?}");
+        println!(
+            "FEATURE: Name = \"{}\", Lat = {}, Lon = {}",
+            feature.name(),
+            feature.location().latitude(),
+            feature.location().longitude()
+        );
     }
 
     Ok(())
@@ -49,7 +54,14 @@ async fn run_record_route(client: &mut RouteGuideClient<Channel>) -> Result<(), 
     let request = Request::new(tokio_stream::iter(points));
 
     match client.record_route(request).await {
-        Ok(response) => println!("SUMMARY: {:?}", response.into_inner()),
+        Ok(response) => {
+            let response = response.into_inner();
+            println!(
+                "SUMMARY: Feature Count = {}, Distance = {}",
+                response.feature_count(),
+                response.distance()
+            )
+        }
         Err(e) => println!("something went wrong: {e:?}"),
     }
 
@@ -80,7 +92,12 @@ async fn run_route_chat(client: &mut RouteGuideClient<Channel>) -> Result<(), Bo
     let mut inbound = response.into_inner();
 
     while let Some(note) = inbound.message().await? {
-        println!("NOTE = {note:?}");
+        println!(
+            "Note: Latitude = {}, Longitude = {}, Message = \"{}\"",
+            note.location().latitude(),
+            note.location().longitude(),
+            note.message()
+        );
     }
 
     Ok(())
@@ -89,8 +106,8 @@ async fn run_route_chat(client: &mut RouteGuideClient<Channel>) -> Result<(), Bo
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     //Create endpoint to connect to
-    let endpoint = Endpoint::new("http://[::1]:10000")?; 
-    let channel = endpoint.connect().await?;             
+    let endpoint = Endpoint::new("http://[::1]:10000")?;
+    let channel = endpoint.connect().await?;
 
     // Create a new client
     let mut client = RouteGuideClient::new(channel);

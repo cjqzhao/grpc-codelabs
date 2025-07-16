@@ -413,10 +413,8 @@ async fn list_features(
         request: Request<Rectangle>,
     ) -> Result<Response<Self::ListFeaturesStream>, Status> {
         println!("ListFeatures = {:?}", request);
-
         let (tx, rx) = mpsc::channel(4);
         let features = self.features.clone();
-
         tokio::spawn(async move {
             for feature in &features[..] {
                 if in_range(feature.location.as_ref().unwrap(), request.get_ref()) {
@@ -424,7 +422,6 @@ async fn list_features(
                     tx.send(Ok(feature.clone())).await.unwrap();
                 }
             }
-
             println!(" /// done sending");
         });
 
@@ -459,16 +456,13 @@ async fn record_route(
     request: Request<tonic::Streaming<Point>>,
 ) -> Result<Response<RouteSummary>, Status> {
     println!("RecordRoute");
-
     let mut stream = request.into_inner();
-
     let mut summary = RouteSummary::default();
     let mut last_point = None;
     let now = Instant::now();
 
     while let Some(point) = stream.next().await {
         let point = point?;
-
         println!("  ==> Point = {point:?}");
 
         // Increment the point count
@@ -555,47 +549,40 @@ Once we’ve implemented all our methods, we also need to start up a gRPC server
 so that clients can actually use our service. The following snippet shows how we
 do this for our `RouteGuide` service:
 
-> [!NOTE]
->  port can be configured by passing in `port` flag. Defaults to `50051`
 
 ```rust
-let addr = "[::1]:10000".parse().unwrap();
-
-println!("RouteGuideServer listening on: {addr}");
-
-let route_guide = RouteGuideService {
-    features: Arc::new(data::load()),
-};
-
-let svc = RouteGuideServer::new(route_guide);
-
-Server::builder().add_service(svc).serve(addr).await?;
-
-Ok(())
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let addr = "[::1]:10000".parse().unwrap();
+    println!("RouteGuideServer listening on: {addr}");
+    let route_guide = RouteGuideService {
+        features: Arc::new(data::load()),
+    };
+    let svc = RouteGuideServer::new(route_guide);
+    Server::builder().add_service(svc).serve(addr).await?;
+    Ok(())
+}
 ```
 
 To build and start a server, we:
 
-1. Specify the port we want to use to listen for client requests using:
-   `lis, err := net.Listen(...)`
-2. Create an instance of the gRPC server using `grpc.NewServer(...)`.
-3. Use `s.loadFeatures()` to load features into `s.savedFeatures`
+1. Specify the port we want to use to listen for client requests 
+2. Create an instance of the gRPC server using `RouteGuideServer::new(...)`.
+3. Use `data.load()` to load features into `features`
 4. Register our service implementation with the gRPC server.
-5. Call `Serve()` on the server with our port details to do a blocking wait
+5. Call `serve()` on the server with our port details to do a blocking wait
    until the process is killed or `Stop()` is called.
 
 ## Creating the client
 
-In this section, we’ll look at creating a Go client for our RouteGuide service.
+In this section, we’ll look at creating a Rust client for our RouteGuide service.
 
-> [!TIP]
->  For the complete server implementation, see [client.go](completed/client/client.go)
 
 ### Creating a stub
 
 To call service methods, we first need to create a gRPC *channel* to communicate
 with the server. We create this by passing the server address and port number to
-`grpc.NewClient()` as follows:
+`RouteGuideClient::new(...)` as follows:
 
 > [!NOTE]
 >  serverAddr can be configured by passing in `addr` flag. Defaults to `localhost:50051`
@@ -643,29 +630,29 @@ async fn print_features(client: &mut RouteGuideClient<Channel>) -> Result<(), Bo
         .into_inner();
 
     while let Some(feature) = stream.message().await? {
-        println!("FEATURE = {feature:?}");
+        println!("FEATURE: Name = \"{}\", Lat = {}, Lon = {}",
+                feature.name(),
+                feature.location().latitude(),
+                feature.location().longitude());
     }
 
     Ok(())
 }
 ```
 
-As in the simple RPC, we pass the method a context and a request. However,
+As in the simple RPC, we pass the method a request. However,
 instead of getting a response object back, we get back an instance of
-`RouteGuide_ListFeaturesClient`. The client can use the
-`RouteGuide_ListFeaturesClient` stream to read the server’s responses. We use
-the `RouteGuide_ListFeaturesClient`’s `Recv()` method to repeatedly read in the
+`ListFeaturesStream`. The client can use the
+`ListFeaturesStream` stream to read the server’s responses. We use
+the `ListFeaturesStream`’s `message()` method to repeatedly read in the
 server’s responses to a response protocol buffer object (in this case a
-`Feature`) until there are no more messages: the client needs to check the error
-err returned from `Recv()` after each call. If nil, the stream is still good and
-it can continue reading; if it’s `io.EOF` then the message stream has ended;
-otherwise there must be an RPC error, which is passed over through `err`.
+`Feature`) until there are no more messages.
 
 #### Client-side streaming RPC 
 
 The client-side streaming method `RecordRoute` is similar to the server-side
-method, except that we only pass the method a context and get a
-`RouteGuide_RecordRouteClient` stream back, which we can use to both *write* and
+method, except that we only pass the method a request and get 
+`Response<RouteSummary>` back, which we can use to both *write* and
 *read* messages.
 
 ```rust
@@ -682,7 +669,9 @@ async fn run_record_route(client: &mut RouteGuideClient<Channel>) -> Result<(), 
     let request = Request::new(tokio_stream::iter(points));
 
     match client.record_route(request).await {
-        Ok(response) => println!("SUMMARY: {:?}", response.into_inner()),
+        Ok(response) => {
+            let response = response.into_inner();
+            println!("SUMMARY: Feature Count = {}, Distance = {}", response.feature_count(), response.distance())},
         Err(e) => println!("something went wrong: {e:?}"),
     }
 
@@ -690,38 +679,43 @@ async fn run_record_route(client: &mut RouteGuideClient<Channel>) -> Result<(), 
 }
 ```
 
-The `RouteGuide_RecordRouteClient` has a `Send()` method that we can use to send
-requests to the server. Once we’ve finished writing our client’s requests to the
-stream using `Send()`, we need to call `CloseAndRecv()` on the stream to let
-gRPC know that we’ve finished writing and are expecting to receive a response.
-We get our RPC status from the err returned from `CloseAndRecv()`. If the status
-is nil, then the first return value from `CloseAndRecv()` will be a valid server
-response.
-
 #### Bidirectional streaming RPC 
 
 Finally, let’s look at our bidirectional streaming RPC `RouteChat()`. As in the
-case of `RecordRoute`, we only pass the method a context object and get back a
-stream that we can use to both write and read messages. However, this time we
+case of `RecordRoute`, we only pass the method a `Request` object and get back a
+`RouteChatStream` that we can use to both write and read messages. However, this time we
 return values via our method’s stream while the server is still writing messages
 to their message stream.
 
 ```rust
-async fn run_record_route(client: &mut RouteGuideClient<Channel>) -> Result<(), Box<dyn Error>> {
-    let mut rng = rand::rng();
-    let point_count: i32 = rng.random_range(2..100);
+async fn run_route_chat(client: &mut RouteGuideClient<Channel>) -> Result<(), Box<dyn Error>> {
+    let start = time::Instant::now();
 
-    let mut points = vec![];
-    for _ in 0..=point_count {
-        points.push(random_point(&mut rng))
-    }
+    let outbound = async_stream::stream! {
+        let mut interval = time::interval(Duration::from_secs(1));
 
-    println!("Traversing {} points", points.len());
-    let request = Request::new(tokio_stream::iter(points));
+        loop {
+            let time = interval.tick().await;
+            let elapsed = time.duration_since(start);
+            let mut point = Point::new();
+            point.set_latitude( 409146138 + elapsed.as_secs() as i32);
+            point.set_longitude(-746188906);
+            let mut note = RouteNote::new();
+            note.set_location(point);
+            note.set_message(format!("at {elapsed:?}"));
 
-    match client.record_route(request).await {
-        Ok(response) => println!("SUMMARY: {:?}", response.into_inner()),
-        Err(e) => println!("something went wrong: {e:?}"),
+            yield note;
+        }
+    };
+
+    let response = client.route_chat(Request::new(outbound)).await?;
+    let mut inbound = response.into_inner();
+
+    while let Some(note) = inbound.message().await? {
+        println!("Note: Latitude = {}, Longitude = {}, Message = \"{}\"",
+                note.location().latitude(),
+                note.location().longitude(),
+                note.message());
     }
 
     Ok(())
@@ -729,8 +723,7 @@ async fn run_record_route(client: &mut RouteGuideClient<Channel>) -> Result<(), 
 ```
 
 The syntax for reading and writing here is very similar to our client-side
-streaming method, except we use the stream’s `CloseSend()` method once we’ve
-finished our call. Although each side will always get the other’s messages in
+streaming method. Although each side will always get the other’s messages in
 the order they were written, both the client and server can read and write in
 any order — the streams operate completely independently.
 
@@ -758,41 +751,27 @@ You’ll see output like this:
 *** SERVER STREAMING ***
 
 *** CLIENT STREAMING ***
-Traversing 49 points
-SUMMARY: 1: 49
-3: 449075540
-
+Traversing 58 points
+SUMMARY: Feature Count = 0, Distance = 536724194
 
 *** BIDIRECTIONAL STREAMING ***
-NOTE = 1 {
-  1: 409146138
-  2: -746188906
-}
-2: "at 232.03µs"
-
-NOTE = 1 {
-  1: 409146139
-  2: -746188906
-}
-2: "at 1.00023203s"
-
-NOTE = 1 {
-  1: 409146140
-  2: -746188906
-}
-2: "at 2.00023203s"
-
-NOTE = 1 {
-  1: 409146141
-  2: -746188906
-}
-2: "at 3.00023203s"
-
-NOTE = 1 {
-  1: 409146142
-  2: -746188906
-}
-2: "at 4.00023203s"
+Note: Latitude = 409146138, Longitude = -746188906, Message = "at 149.76µs"
+Note: Latitude = 409146139, Longitude = -746188906, Message = "at 1.00014976s"
+Note: Latitude = 409146140, Longitude = -746188906, Message = "at 2.00014976s"
+Note: Latitude = 409146141, Longitude = -746188906, Message = "at 3.00014976s"
+Note: Latitude = 409146142, Longitude = -746188906, Message = "at 4.00014976s"
+Note: Latitude = 409146143, Longitude = -746188906, Message = "at 5.00014976s"
+Note: Latitude = 409146144, Longitude = -746188906, Message = "at 6.00014976s"
+Note: Latitude = 409146145, Longitude = -746188906, Message = "at 7.00014976s"
+Note: Latitude = 409146146, Longitude = -746188906, Message = "at 8.00014976s"
+Note: Latitude = 409146147, Longitude = -746188906, Message = "at 9.00014976s"
+Note: Latitude = 409146148, Longitude = -746188906, Message = "at 10.00014976s"
+Note: Latitude = 409146149, Longitude = -746188906, Message = "at 11.00014976s"
+Note: Latitude = 409146150, Longitude = -746188906, Message = "at 12.00014976s"
+Note: Latitude = 409146151, Longitude = -746188906, Message = "at 13.00014976s"
+Note: Latitude = 409146152, Longitude = -746188906, Message = "at 14.00014976s"
+Note: Latitude = 409146153, Longitude = -746188906, Message = "at 15.00014976s"
+Note: Latitude = 409146154, Longitude = -746188906, Message = "at 16.00014976s"
 ```
 > [!NOTE]
 > We’ve omitted timestamps from the client and server trace output shown in this page

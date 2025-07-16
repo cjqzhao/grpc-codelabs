@@ -15,11 +15,7 @@ struct Location {
 
 #[allow(dead_code)]
 pub fn load() -> Vec<crate::routeguide::Feature> {
-    let data_dir = std::path::PathBuf::from_iter([
-        std::env!("CARGO_MANIFEST_DIR"),
-        "src",                           
-        "data"                           
-    ]);
+    let data_dir = std::path::PathBuf::from_iter([std::env!("CARGO_MANIFEST_DIR"), "src", "data"]);
     let file = File::open(data_dir.join("route_guide_db.json")).expect("failed to open data file");
 
     let decoded: Vec<Feature> =
