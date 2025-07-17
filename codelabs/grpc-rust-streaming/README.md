@@ -615,15 +615,17 @@ returns a stream of geographical `Feature`s.
 
 ```rust
 async fn print_features(client: &mut RouteGuideClient<Channel>) -> Result<(), Box<dyn Error>> {
-    let mut point_one = Point::new();
-    point_one.set_latitude(400_000_000);
-    point_one.set_longitude(-750_000_000);
-    let mut point_two = Point::new();
-    point_two.set_latitude(400_000_000);
-    point_two.set_longitude(-730_000_000);
-    let mut rectangle = Rectangle::new();
-    rectangle.set_lo(point_one);
-    rectangle.set_hi(point_two);
+    let rectangle = proto!(Rectangle {
+        lo: proto!(Point {
+            latitude: 400_000_000,
+            longitude: -750_000_000,
+        }),
+        hi: proto!(Point {
+            latitude: 420_000_000,
+            longitude: -730_000_000,
+        }),
+    });
+
     let mut stream = client
         .list_features(Request::new(rectangle))
         .await?
@@ -631,11 +633,10 @@ async fn print_features(client: &mut RouteGuideClient<Channel>) -> Result<(), Bo
 
     while let Some(feature) = stream.message().await? {
         println!("FEATURE: Name = \"{}\", Lat = {}, Lon = {}",
-                feature.name(),
-                feature.location().latitude(),
-                feature.location().longitude());
-    }
-
+            feature.name(),
+            feature.location().latitude(),
+            feature.location().longitude());
+        }
     Ok(())
 }
 ```
@@ -690,34 +691,29 @@ to their message stream.
 ```rust
 async fn run_route_chat(client: &mut RouteGuideClient<Channel>) -> Result<(), Box<dyn Error>> {
     let start = time::Instant::now();
-
     let outbound = async_stream::stream! {
         let mut interval = time::interval(Duration::from_secs(1));
-
         loop {
             let time = interval.tick().await;
             let elapsed = time.duration_since(start);
-            let mut point = Point::new();
-            point.set_latitude( 409146138 + elapsed.as_secs() as i32);
-            point.set_longitude(-746188906);
-            let mut note = RouteNote::new();
-            note.set_location(point);
-            note.set_message(format!("at {elapsed:?}"));
-
+            let note = proto!(RouteNote {
+                location: proto!(Point {
+                    latitude: 409146138 + elapsed.as_secs() as i32,
+                    longitude: -746188906,
+                }),
+                message: format!("at {elapsed:?}"),
+            });
             yield note;
         }
     };
-
     let response = client.route_chat(Request::new(outbound)).await?;
     let mut inbound = response.into_inner();
-
     while let Some(note) = inbound.message().await? {
         println!("Note: Latitude = {}, Longitude = {}, Message = \"{}\"",
-                note.location().latitude(),
-                note.location().longitude(),
-                note.message());
-    }
-
+            note.location().latitude(),
+            note.location().longitude(),
+            note.message());
+        }
     Ok(())
 }
 ```
@@ -726,6 +722,31 @@ The syntax for reading and writing here is very similar to our client-side
 streaming method. Although each side will always get the other’s messages in
 the order they were written, both the client and server can read and write in
 any order — the streams operate completely independently.
+
+You can call each method in `main` such as below.
+
+```rust
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    //Create endpoint to connect to
+    let endpoint = Endpoint::new("http://[::1]:10000")?; 
+    let channel = endpoint.connect().await?;             
+
+    // Create a new client
+    let mut client = RouteGuideClient::new(channel);
+
+    println!("\n*** SERVER STREAMING ***");
+    print_features(&mut client).await?;
+
+    println!("\n*** CLIENT STREAMING ***");
+    run_record_route(&mut client).await?;
+
+    println!("\n*** BIDIRECTIONAL STREAMING ***");
+    run_route_chat(&mut client).await?;
+
+    Ok(())
+}
+```
 
 ## Try it out
 
@@ -749,32 +770,20 @@ You’ll see output like this:
 
 ```
 *** SERVER STREAMING ***
-
+FEATURE: Name = "Patriots Path, Mendham, NJ 07945, USA", Lat = 407838351, Lon = -746143763
+FEATURE: Name = "101 New Jersey 10, Whippany, NJ 07981, USA", Lat = 408122808, Lon = -743999179
+FEATURE: Name = "U.S. 6, Shohola, PA 18458, USA", Lat = 413628156, Lon = -749015468
+...
 *** CLIENT STREAMING ***
-Traversing 58 points
-SUMMARY: Feature Count = 0, Distance = 536724194
+Traversing 86 points
+SUMMARY: Feature Count = 0, Distance = 803709356
 
 *** BIDIRECTIONAL STREAMING ***
-Note: Latitude = 409146138, Longitude = -746188906, Message = "at 149.76µs"
-Note: Latitude = 409146139, Longitude = -746188906, Message = "at 1.00014976s"
-Note: Latitude = 409146140, Longitude = -746188906, Message = "at 2.00014976s"
-Note: Latitude = 409146141, Longitude = -746188906, Message = "at 3.00014976s"
-Note: Latitude = 409146142, Longitude = -746188906, Message = "at 4.00014976s"
-Note: Latitude = 409146143, Longitude = -746188906, Message = "at 5.00014976s"
-Note: Latitude = 409146144, Longitude = -746188906, Message = "at 6.00014976s"
-Note: Latitude = 409146145, Longitude = -746188906, Message = "at 7.00014976s"
-Note: Latitude = 409146146, Longitude = -746188906, Message = "at 8.00014976s"
-Note: Latitude = 409146147, Longitude = -746188906, Message = "at 9.00014976s"
-Note: Latitude = 409146148, Longitude = -746188906, Message = "at 10.00014976s"
-Note: Latitude = 409146149, Longitude = -746188906, Message = "at 11.00014976s"
-Note: Latitude = 409146150, Longitude = -746188906, Message = "at 12.00014976s"
-Note: Latitude = 409146151, Longitude = -746188906, Message = "at 13.00014976s"
-Note: Latitude = 409146152, Longitude = -746188906, Message = "at 14.00014976s"
-Note: Latitude = 409146153, Longitude = -746188906, Message = "at 15.00014976s"
-Note: Latitude = 409146154, Longitude = -746188906, Message = "at 16.00014976s"
+Note: Latitude = 409146138, Longitude = -746188906, Message = "at 112.45µs"
+Note: Latitude = 409146139, Longitude = -746188906, Message = "at 1.00011245s"
+Note: Latitude = 409146140, Longitude = -746188906, Message = "at 2.00011245s"
+...
 ```
-> [!NOTE]
-> We’ve omitted timestamps from the client and server trace output shown in this page
 
 ## What’s next
 

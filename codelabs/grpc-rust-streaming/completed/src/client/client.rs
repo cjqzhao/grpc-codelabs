@@ -77,21 +77,17 @@ async fn run_route_chat(client: &mut RouteGuideClient<Channel>) -> Result<(), Bo
                 }),
                 message: format!("at {elapsed:?}"),
             });
-
             yield note;
         }
     };
-
     let response = client.route_chat(Request::new(outbound)).await?;
     let mut inbound = response.into_inner();
-
     while let Some(note) = inbound.message().await? {
         println!("Note: Latitude = {}, Longitude = {}, Message = \"{}\"",
             note.location().latitude(),
             note.location().longitude(),
             note.message());
         }
-
     Ok(())
 }
 
