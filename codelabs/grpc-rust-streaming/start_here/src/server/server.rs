@@ -1,97 +1,83 @@
-use std::collections::HashMap;
-use std::pin::Pin;
-use std::sync::Arc;
-use std::time::Instant;
+// use std::collections::HashMap;
+// use std::pin::Pin;
+// use std::sync::Arc;
+// use std::time::Instant;
 
-use tokio::sync::mpsc;
-use tokio_stream::{wrappers::ReceiverStream, Stream, StreamExt};
-use tonic::transport::Server;
-use tonic::{Request, Response, Status};
+// use tokio::sync::mpsc;
+// use tokio_stream::{wrappers::ReceiverStream, Stream, StreamExt};
+// use tonic::transport::Server;
+// use tonic::{Request, Response, Status};
 
-use routeguide::route_guide_server::{RouteGuide, RouteGuideServer};
-use routeguide::{Feature, Point, Rectangle, RouteNote, RouteSummary};
+// use routeguide::route_guide_server::{RouteGuide, RouteGuideServer};
+// use routeguide::{Feature, Point, Rectangle, RouteNote, RouteSummary};
 
-pub mod routeguide {
-    tonic::include_proto!("routeguide");
-}
+// pub mod routeguide {
+//     tonic::include_proto!("routeguide");
+// }
 
-mod data;
+// mod data;
 
-#[derive(Debug)]
-pub struct RouteGuideService {
-    features: Arc<Vec<Feature>>,
-}
+// #[derive(Debug)]
+// pub struct RouteGuideService {
+//     features: Arc<Vec<Feature>>,
+// }
 
-#[tonic::async_trait]
-impl RouteGuide for RouteGuideService {
+// #[tonic::async_trait]
+// impl RouteGuide for RouteGuideService {
 
-    type ListFeaturesStream = ReceiverStream<Result<Feature, Status>>;
+//     type ListFeaturesStream = ReceiverStream<Result<Feature, Status>>;
 
-    async fn list_features(
-        &self,
-        request: Request<Rectangle>,
-    ) -> Result<Response<Self::ListFeaturesStream>, Status> {
-        ///////////////////////////////////////////////////////////////////////////
-        // Codelab Hint: Logic for ListFeature will be added here.
-        //
-        // Steps include:
-        // -    Loop through the features to find the features that are within
-        //      the given bounding Rectangle.
-        // -    Send the features that are within the bounding Rectangle to the
-        //		client.
-        // -    Return an error if there is an issue sending the feature.
-        ///////////////////////////////////////////////////////////////////////////
-    }
+//     async fn list_features(
+//         &self,
+//         request: Request<Rectangle>,
+//     ) -> Result<Response<Self::ListFeaturesStream>, Status> {
+//         ///////////////////////////////////////////////////////////////////////////
+//         // Codelab Hint: Logic for ListFeature will be added here.
+//         //
+//         // Steps include:
+//         // -    Loop through the features to find the features that are within
+//         //      the given bounding Rectangle.
+//         // -    Send the features that are within the bounding Rectangle to the
+//         //		client.
+//         // -    Return an error if there is an issue sending the feature.
+//         ///////////////////////////////////////////////////////////////////////////
+//     }
 
-    async fn record_route(
-        &self,
-        request: Request<tonic::Streaming<Point>>,
-    ) -> Result<Response<RouteSummary>, Status> {
-        ///////////////////////////////////////////////////////////////////////////
-        // Codelab Hint: Logic for RecordRoute will be added here.
-        //
-        // Steps include:
-        // -    Loop until the end of the stream, i.e., until io.EOF is received.
-        // -    Calculate the distance between the last point and the current point.
-        // -    Update the pointCount, featureCount, and distance.
-        // -    Calculate the total time spent.
-        // -    Send the RouteSummary to the client.
-        // -    Return an error if there is an issue sending the RouteSummary.
-        ///////////////////////////////////////////////////////////////////////////
-    }
+//     async fn record_route(
+//         &self,
+//         request: Request<tonic::Streaming<Point>>,
+//     ) -> Result<Response<RouteSummary>, Status> {
+//         ///////////////////////////////////////////////////////////////////////////
+//         // Codelab Hint: Logic for RecordRoute will be added here.
+//         //
+//         // Steps include:
+//         // -    Loop until the end of the stream, i.e., until io.EOF is received.
+//         // -    Calculate the distance between the last point and the current point.
+//         // -    Update the pointCount, featureCount, and distance.
+//         // -    Calculate the total time spent.
+//         // -    Send the RouteSummary to the client.
+//         // -    Return an error if there is an issue sending the RouteSummary.
+//         ///////////////////////////////////////////////////////////////////////////
+//     }
 
-    type RouteChatStream = Pin<Box<dyn Stream<Item = Result<RouteNote, Status>> + Send + 'static>>;
+//     type RouteChatStream = Pin<Box<dyn Stream<Item = Result<RouteNote, Status>> + Send + 'static>>;
 
-    async fn route_chat(
-        &self,
-        request: Request<tonic::Streaming<RouteNote>>,
-    ) -> Result<Response<Self::RouteChatStream>, Status> {
-        ///////////////////////////////////////////////////////////////////////////
-        // Codelab Hint: Logic for RouteChat will be added here.
-        //
-        // Steps include:
-        // -    Loop until the end of the stream, i.e., until io.EOF is received.
-        // -    Serialize the location to a string. (Hint: use the serialize function)
-        // -    Append the message to the routeNotes map. (Hint: use s.routeNotes, after acquiring the lock)
-        // -    Send all previous messages at each of those locations to the client.
-        // -    Return an error if there is an issue sending the RouteNote.
-        ///////////////////////////////////////////////////////////////////////////
-    }
-}
-
-#[tokio::main]
-async fn main() {
-    ///////////////////////////////////////////////////////////////////////////
-	// Codelab Hint: Logic for starting up a gRPC Server will be added here.
-	//
-	// Steps include:
-	//  -   Specify the port we want to use to listen for client requests 
-	//  -   Create an instance of the gRPC server using RouteGuideServer.new(...).
-	//  -   Register our service implementation with the gRPC server.
-	//  -   Call serve() on the server with our port details to do a blocking
-	//      wait until the process is killed or Stop() is called.
-	///////////////////////////////////////////////////////////////////////////
-}
+//     async fn route_chat(
+//         &self,
+//         request: Request<tonic::Streaming<RouteNote>>,
+//     ) -> Result<Response<Self::RouteChatStream>, Status> {
+//         ///////////////////////////////////////////////////////////////////////////
+//         // Codelab Hint: Logic for RouteChat will be added here.
+//         //
+//         // Steps include:
+//         // -    Loop until the end of the stream, i.e., until io.EOF is received.
+//         // -    Serialize the location to a string. (Hint: use the serialize function)
+//         // -    Append the message to the routeNotes map. (Hint: use s.routeNotes, after acquiring the lock)
+//         // -    Send all previous messages at each of those locations to the client.
+//         // -    Return an error if there is an issue sending the RouteNote.
+//         ///////////////////////////////////////////////////////////////////////////
+//     }
+// }
 
 // fn in_range(point: &Point, rect: &Rectangle) -> bool {
 //     use std::cmp;
@@ -134,3 +120,17 @@ async fn main() {
 
 //     (R * c) as i32
 // }
+
+#[tokio::main]
+async fn main() {
+    ///////////////////////////////////////////////////////////////////////////
+	// Codelab Hint: Logic for starting up a gRPC Server will be added here.
+	//
+	// Steps include:
+	//  -   Specify the port we want to use to listen for client requests 
+	//  -   Create an instance of the gRPC server using RouteGuideServer.new(...).
+	//  -   Register our service implementation with the gRPC server.
+	//  -   Call serve() on the server with our port details to do a blocking
+	//      wait until the process is killed or Stop() is called.
+	///////////////////////////////////////////////////////////////////////////
+}

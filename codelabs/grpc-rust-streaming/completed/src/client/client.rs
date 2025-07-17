@@ -15,10 +15,6 @@ pub mod routeguide {
     grpc::include_proto!("", "routeguide");
 }
 
-pub mod tonic_routeguide {
-    tonic::include_proto!("routeguide");
-}
-
 async fn print_features(client: &mut RouteGuideClient<Channel>) -> Result<(), Box<dyn Error>> {
     let rectangle = proto!(Rectangle {
         lo: proto!(Point {
@@ -107,7 +103,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create a new client
     let mut client = RouteGuideClient::new(channel);
-
 
     println!("\n*** SERVER STREAMING ***");
     print_features(&mut client).await?;
