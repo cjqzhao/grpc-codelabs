@@ -6,6 +6,7 @@ use rand::Rng;
 use tokio::time;
 use tonic::transport::{Channel, Endpoint};
 use tonic::Request;
+use protobuf::proto;
 
 use routeguide::route_guide_client::RouteGuideClient;
 use routeguide::{Point, Rectangle, RouteNote};
@@ -14,30 +15,33 @@ pub mod routeguide {
     grpc::include_proto!("", "routeguide");
 }
 
+pub mod tonic_routeguide {
+    tonic::include_proto!("routeguide");
+}
+
 async fn print_features(client: &mut RouteGuideClient<Channel>) -> Result<(), Box<dyn Error>> {
-    let mut point_one = Point::new();
-    point_one.set_latitude(400_000_000);
-    point_one.set_longitude(-750_000_000);
-    let mut point_two = Point::new();
-    point_two.set_latitude(400_000_000);
-    point_two.set_longitude(-730_000_000);
-    let mut rectangle = Rectangle::new();
-    rectangle.set_lo(point_one);
-    rectangle.set_hi(point_two);
+    let rectangle = proto!(Rectangle {
+        lo: proto!(Point {
+            latitude: 400_000_000,
+            longitude: -750_000_000,
+        }),
+        hi: proto!(Point {
+            latitude: 420_000_000,
+            longitude: -730_000_000,
+        }),
+    });
+
     let mut stream = client
         .list_features(Request::new(rectangle))
         .await?
         .into_inner();
 
     while let Some(feature) = stream.message().await? {
-        println!(
-            "FEATURE: Name = \"{}\", Lat = {}, Lon = {}",
+        println!("FEATURE: Name = \"{}\", Lat = {}, Lon = {}",
             feature.name(),
             feature.location().latitude(),
-            feature.location().longitude()
-        );
-    }
-
+            feature.location().longitude());
+        }
     Ok(())
 }
 
@@ -56,12 +60,7 @@ async fn run_record_route(client: &mut RouteGuideClient<Channel>) -> Result<(), 
     match client.record_route(request).await {
         Ok(response) => {
             let response = response.into_inner();
-            println!(
-                "SUMMARY: Feature Count = {}, Distance = {}",
-                response.feature_count(),
-                response.distance()
-            )
-        }
+            println!("SUMMARY: Feature Count = {}, Distance = {}", response.feature_count(), response.distance())},
         Err(e) => println!("something went wrong: {e:?}"),
     }
 
@@ -70,19 +69,18 @@ async fn run_record_route(client: &mut RouteGuideClient<Channel>) -> Result<(), 
 
 async fn run_route_chat(client: &mut RouteGuideClient<Channel>) -> Result<(), Box<dyn Error>> {
     let start = time::Instant::now();
-
     let outbound = async_stream::stream! {
         let mut interval = time::interval(Duration::from_secs(1));
-
         loop {
             let time = interval.tick().await;
             let elapsed = time.duration_since(start);
-            let mut point = Point::new();
-            point.set_latitude( 409146138 + elapsed.as_secs() as i32);
-            point.set_longitude(-746188906);
-            let mut note = RouteNote::new();
-            note.set_location(point);
-            note.set_message(format!("at {elapsed:?}"));
+            let note = proto!(RouteNote {
+                location: proto!(Point {
+                    latitude: 409146138 + elapsed.as_secs() as i32,
+                    longitude: -746188906,
+                }),
+                message: format!("at {elapsed:?}"),
+            });
 
             yield note;
         }
@@ -92,13 +90,11 @@ async fn run_route_chat(client: &mut RouteGuideClient<Channel>) -> Result<(), Bo
     let mut inbound = response.into_inner();
 
     while let Some(note) = inbound.message().await? {
-        println!(
-            "Note: Latitude = {}, Longitude = {}, Message = \"{}\"",
+        println!("Note: Latitude = {}, Longitude = {}, Message = \"{}\"",
             note.location().latitude(),
             note.location().longitude(),
-            note.message()
-        );
-    }
+            note.message());
+        }
 
     Ok(())
 }
@@ -106,11 +102,12 @@ async fn run_route_chat(client: &mut RouteGuideClient<Channel>) -> Result<(), Bo
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     //Create endpoint to connect to
-    let endpoint = Endpoint::new("http://[::1]:10000")?;
-    let channel = endpoint.connect().await?;
+    let endpoint = Endpoint::new("http://[::1]:10000")?; 
+    let channel = endpoint.connect().await?;             
 
     // Create a new client
     let mut client = RouteGuideClient::new(channel);
+
 
     println!("\n*** SERVER STREAMING ***");
     print_features(&mut client).await?;
@@ -127,8 +124,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 fn random_point(rng: &mut ThreadRng) -> Point {
     let latitude = (rng.random_range(0..180) - 90) * 10_000_000;
     let longitude = (rng.random_range(0..360) - 180) * 10_000_000;
-    let mut point = Point::new();
-    point.set_latitude(latitude);
-    point.set_longitude(longitude);
-    point
+    proto!(Point {
+        latitude: latitude,
+        longitude: longitude
+    })
 }
