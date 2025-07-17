@@ -16,7 +16,7 @@ peak of how the final implementation should look like.
 
 ### What you’ll learn
 
-* Get hands-on with gRPC for Rust in this interactive codelab\! Perfect for Go
+* Get hands-on with gRPC for Rust in this interactive codelab\! Perfect for Rust
   developers new to gRPC, those seeking a refresher, or anyone building
   distributed systems. No prior gRPC experience needed\!
 * Build a complete gRPC service from scratch, learning:
@@ -400,6 +400,33 @@ impl RouteGuide for RouteGuideService {
 }
 ```
 
+We need to implement the `route_guide_server::RouteGuide` trait that is generated in our build step.
+The generated code is placed inside our target directory, in a location defined by the `OUT_DIR`
+environment variable that is set by cargo. For our example, this means you can find the generated
+code in a path similar to `target/debug/build/routeguide/out/routeguide.rs`.
+
+We can use gRPC's `include_proto` macro to bring the generated code into scope:
+
+```rust
+use std::collections::HashMap;
+use std::pin::Pin;
+use std::sync::Arc;
+use std::time::Instant;
+
+use tokio::sync::mpsc;
+use tokio_stream::{wrappers::ReceiverStream, Stream, StreamExt};
+use tonic::transport::Server;
+use tonic::{Request, Response, Status};
+
+use routeguide::route_guide_server::{RouteGuide, RouteGuideServer};
+use routeguide::{Feature, Point, Rectangle, RouteNote, RouteSummary};
+
+pub mod routeguide {
+    tonic::include_proto!("routeguide");
+}
+```
+
+With this in place, we can stub out our service implementation:
 Let us look into the RPC implementation in detail
 
 #### Server-side streaming RPC 
@@ -546,8 +573,18 @@ any order — the streams operate completely independently.
 ## Starting the server
 
 Once we’ve implemented all our methods, we also need to start up a gRPC server
-so that clients can actually use our service. The following snippet shows how we
+so that clients can actually use our service. 
+
+Once we’ve implemented all our methods, we also need to start up a gRPC server
+so that clients can actually use our service. The following snippets shows how we
 do this for our `RouteGuide` service:
+
+The features that RouteGuideService will instianted with will be from `route_guide_db.json` and will need a helper function from `data.rs`. Uncomment all the code in `data.rs`. Then, fill in main().
+
+```rust
+mod data;
+use tonic::transport::Server;
+```
 
 
 ```rust
@@ -580,6 +617,26 @@ In this section, we’ll look at creating a Rust client for our RouteGuide servi
 
 ### Creating a stub
 
+Once again, we bring the generated code into scope with `include_proto`.
+
+```rust
+use std::error::Error;
+use std::time::Duration;
+
+use rand::rngs::ThreadRng;
+use rand::Rng;
+use tokio::time;
+use tonic::transport::{Channel, Endpoint};
+use tonic::Request;
+use protobuf::proto;
+
+use routeguide::route_guide_client::RouteGuideClient;
+use routeguide::{Point, Rectangle, RouteNote};
+
+pub mod routeguide {
+    grpc::include_proto!("", "routeguide");
+}
+```
 To call service methods, we first need to create a gRPC *channel* to communicate
 with the server. We create this by passing the server address and port number to
 `RouteGuideClient::new(...)` as follows:
@@ -594,7 +651,7 @@ let channel = endpoint.connect().await?;
 ```
 
 Once the gRPC *channel* is set up, we need a client *stub* to perform RPCs by
-making Go function calls. We get it using the `RouteGuideClient::new(...)` method
+making Rust function calls. We get it using the `RouteGuideClient::new(...)` method
 generated from the example `.proto` file.
 
 ```rust
@@ -604,7 +661,7 @@ let mut client = RouteGuideClient::new(channel);
 
 ### Calling service methods
 
-Now let’s look at how we call our service methods. Note that in gRPC-Go, RPCs
+Now let’s look at how we call our service methods. Note that in gRPC-Rust, RPCs
 operate in a blocking/synchronous mode, which means that the RPC call waits for
 the server to respond, and will either return a response or an error.
 
