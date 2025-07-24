@@ -42,7 +42,6 @@ impl RouteGuide for RouteGuideService {
                     tx.send(Ok(feature.clone())).await.unwrap();
                 }
             }
-
             println!(" /// done sending");
         });
 
