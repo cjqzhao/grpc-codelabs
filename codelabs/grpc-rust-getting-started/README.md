@@ -51,11 +51,11 @@ and easy interface updating.
 
 ### Prerequisites
 
-* [**Tonic**](https://github.com/hyperium/tonic.git), the open source repository that gRPC-Rust is based off
+* [**Tonic**](https://github.com/hyperium/tonic.git), the open source repository that gRPC-Rust is build off on
 ```sh
 $ git clone https://github.com/hyperium/tonic.git
 ```
-* [**Rust**](https://www.rust-lang.org/), any one of the **two latest major** releases of Rust.
+* [**Rust**](https://www.rust-lang.org/).
     * Follow installation instructions [here](https://www.rust-lang.org/tools/install).
 * [**Protocol buffer**](https://developers.google.com/protocol-buffers) **compiler**, `protoc`, [version 3](https://protobuf.dev/programming-guides/proto3).
     * For installation instructions, see [Protocol Buffer Compiler Installation](https://grpc.io/docs/protoc-installation/).
@@ -144,13 +144,6 @@ rpc GetFeature(Point) returns (Feature) {}
 Next we need to generate the gRPC client and server interfaces from our `.proto`
 service definition. 
 
-Tonic can be configured to generate code as part cargo's normal build process. This is very
-convenient because once we've set everything up, there is no extra step to keep the generated code
-and our `.proto` definitions in sync.
-
-Behind the scenes, Tonic uses Protobuf Rust to handle protocol buffer serialization and code
-generation.
-
 Edit `Cargo.toml` and add all the dependencies we'll need for this example:
 
 ```toml
@@ -203,7 +196,7 @@ tonic-build = {git = "https://github.com/arjan-bal/tonic.git", branch = "grpc-co
 ```
 Create a `build.rs` file at the root of your crate. A build.rs script is a Rust program that Cargo executes before compiling your main project. Its purpose is to perform tasks like generating source code, linking to non-Rust libraries, or setting environment variables that influence the build process.
 
-In this case, we will be putting the command to compile and build the `.proto` file in build.rs. We will use Tonic's tonic_protobuf_build crate to generate code from the `.proto` file.
+In this case, we will be putting the command to compile and build the `.proto` file in build.rs. We will use gRPC's tonic_protobuf_build crate to generate code from the `.proto` file.
 ```rust
 fn main() {
     let proto = "src/routeguide/routeguide.proto";
@@ -296,12 +289,10 @@ impl RouteGuide for RouteGuideService {
 }
 ```
 
-The method is passed a context object for the RPC and the client’s `Point`
+The method is passed the client’s `Point`
 protocol buffer request. It returns a `Feature` protocol buffer object with the
-response information and an `error`. In the method we populate the `Feature`
-with the appropriate information, and then `return` it along with a nil error to
-tell gRPC that we’ve finished dealing with the RPC and that the `Feature` can be
-returned to the client.
+response information. In the method we populate the `Feature`
+with the appropriate information, and then `return` it.
 
 ## Starting the server
 
@@ -342,17 +333,6 @@ To build and start a server, we:
 
 In this section, we’ll look at creating a Rust client for our RouteGuide service. You can see our complete example client code in examples/src/routeguide/client.rs.
 
-Our crate will have two binary targets: routeguide-client and routeguide-server. We need to edit our Cargo.toml accordingly:
-
-```toml
-[[bin]]
-name = "routeguide-server"
-path = "src/server/server.rs"
-
-[[bin]]
-name = "routeguide-client"
-path = "src/client/client.rs"
-```
 Like in the server case, we'll start by bringing the generated code into scope:
 
 ```rust
@@ -405,12 +385,13 @@ Calling the simple RPC `GetFeature` is nearly as straightforward as calling a lo
 
 ```rust
 println!("*** SIMPLE RPC ***");
-let mut point = Point::new();
-point.set_latitude(409_146_138); 
-point.set_longitude(-746_188_906);
+let point = proto!(Point{
+    latitude: 409_146_138,
+    longitude: -746_188_906
+});
 let response = client
     .get_feature(Request::new(point))
-    .await?;
+    .await?.into_inner();
 Ok(())
 ```
 
@@ -421,12 +402,27 @@ doesn’t return an error, then we can read the response information from the
 server from the first return value.
 
 ```rust
-println!("RESPONSE = {response:?}");
+println!("Response = Name = \"{}\", Latitude = {}, Longitude = {}",
+    response.name(),
+    response.location().latitude(),
+    response.location().longitude());
 ```
 
 ## Try it out
 
-Execute the following commands from the working directory:
+First, to run our Client and Server, let's add them as binary targets to our crate. We need to edit our Cargo.toml accordingly:
+
+```toml
+[[bin]]
+name = "routeguide-server"
+path = "src/server/server.rs"
+
+[[bin]]
+name = "routeguide-client"
+path = "src/client/client.rs"
+```
+
+Then, excute the following commands from the working directory:
 
 1. Run the server:
 
@@ -447,12 +443,7 @@ You’ll see output like this:
 ```
 *** SIMPLE RPC ***
 
-RESPONSE = Response { metadata: MetadataMap { headers: {"content-type": "application/grpc", "date": "Tue, 15 Jul 2025 00:19:02 GMT", "grpc-status": "0"} }, message: 1: "Berkshire Valley Management Area Trail, Jefferson, NJ, USA"
-2 {
-  1: 409146138
-  2: -746188906
-}
-, extensions: Extensions }
+FEATURE: Name = "Berkshire Valley Management Area Trail, Jefferson, NJ, USA", Lat = 409146138, Lon = -746188906
 ```
 > [!NOTE]
 > We’ve omitted timestamps from the client and server trace output shown in this page
