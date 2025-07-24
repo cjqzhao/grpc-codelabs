@@ -456,26 +456,19 @@ async fn list_features(
     }
 ```
 
-As you can see, instead of getting simple request and response objects in our
-method parameters, this time we get a request object (the `Rectangle` in which
-our client wants to find `Features`) and a special
-`RouteGuide_ListFeaturesServer` object to write our responses. In the method, we
-populate as many `Feature` objects as we need to return, writing them to the
-`RouteGuide_ListFeaturesServer` using its `Send()` method. Finally, as in our
-simple RPC, we return a nil error to tell gRPC that we’ve finished writing
-responses. Should any error happen in this call, we return a non-nil error; the
-gRPC layer will translate it into an appropriate RPC status to be sent on the
-wire.
+As you can see, we get a request object (the `Rectangle` in which
+our client wants to find `Features`). This time, we need to return a stream of values. We create a channel and spawn a new asynchronous task where we perform a lookup, sending the features that satisfy our constraints into the channel.
+
+The Stream half of the channel is returned to the caller, wrapped in a tonic::Response.
 
 #### Client-side streaming RPC 
 
 Now let’s look at something a little more complicated: the client-side streaming
 method `RecordRoute`, where we get a stream of `Points` from the client and
-return a single `RouteSummary` with information about their trip. As you can
-see, this time the method doesn’t have a request parameter at all. Instead, it
-gets a `RouteGuide_RecordRouteServer` stream, which the server can use to both
-read and write messages - it can receive client messages using its `Recv()`
-method and return its single response using its `SendAndClose()` method.
+return a single `RouteSummary` with information about their trip. It
+gets a stream as an input, which the server can use to both
+read and write messages. It can iterate through client messages using its `next()`
+method and return its single response.
 
 ```rust
 async fn record_route(
@@ -516,14 +509,10 @@ async fn record_route(
 }
 ```
 
-In the method body we use the `RouteGuide_RecordRouteServer`’s `Recv()` method
+In the method body we use the stream’s `next()` method
 to repeatedly read in our client’s requests to a request object (in this case a
-`Point`) until there are no more messages: the server needs to check the error
-returned from `Recv()` after each call. If this is nil, the stream is still good
-and it can continue reading; if it’s `io.EOF` the message stream has ended and
-the server can return its `RouteSummary`. If it has any other value, we return
-the error “as is” so that it’ll be translated to an RPC status by the gRPC
-layer.
+`Point`) until there are no more messages. If this is None, the stream is still good
+and it can continue reading.
 
 #### Bidirectional streaming RPC 
 
@@ -560,13 +549,11 @@ async fn route_chat(
 }
 ```
 
-This time we get a `RouteGuide_RouteChatServer` stream that, as in our
+This time we get a stream that, as in our
 client-side streaming example, can be used to read and write messages. However,
 this time we return values via our method’s stream while the client is still
 writing messages to their message stream. The syntax for reading and writing
-here is very similar to our client-streaming method, except the server uses the
-stream’s Send() method rather than `SendAndClose()` because it’s writing
-multiple responses. Although each side will always get the other’s messages in
+here is very similar to our client-streaming method, except the server returns a `RouteChatStream`. Although each side will always get the other’s messages in
 the order they were written, both the client and server can read and write in
 any order — the streams operate completely independently.
 
@@ -608,7 +595,7 @@ To build and start a server, we:
 3. Use `data.load()` to load features into `features`
 4. Register our service implementation with the gRPC server.
 5. Call `serve()` on the server with our port details to do a blocking wait
-   until the process is killed or `Stop()` is called.
+   until the process is killed or stopped.
 
 ## Creating the client
 
@@ -806,6 +793,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ```
 
 ## Try it out
+
+First, to run our Client and Server, let's add them as binary targets to our crate. We need to edit our Cargo.toml accordingly:
+
+```toml
+[[bin]]
+name = "routeguide-server"
+path = "src/server/server.rs"
+
+[[bin]]
+name = "routeguide-client"
+path = "src/client/client.rs"
+```
 
 Execute the following commands from the working directory:
 
