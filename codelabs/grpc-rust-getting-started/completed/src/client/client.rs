@@ -1,5 +1,6 @@
 use tonic::Request;
 use tonic::transport::{Channel, Endpoint}; 
+use protobuf::proto;
 
 pub mod route_guide_gen {
     grpc::include_proto!("", "routeguide");
@@ -25,13 +26,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut client = RouteGuideClient::new(channel); 
 
     println!("*** SIMPLE RPC ***");
-    let mut point = Point::new();
-    point.set_latitude(409_146_138); 
-    point.set_longitude(-746_188_906);
+    let point = proto!(Point{
+        latitude: 409_146_138,
+        longitude: -746_188_906
+    });
     let response = client
         .get_feature(Request::new(point))
-        .await?;
-    
-    println!("RESPONSE = {response:?}");
+        .await?.into_inner();
+
+    println!("Response = Name = \"{}\", Latitude = {}, Longitude = {}",
+        response.name(),
+        response.location().latitude(),
+        response.location().longitude());
     Ok(())
 }
