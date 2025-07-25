@@ -54,9 +54,12 @@ and easy interface updating.
 * [**Tonic**](https://github.com/hyperium/tonic.git), the open source repository that gRPC-Rust is build off on
 ```sh
 $ git clone https://github.com/hyperium/tonic.git
+// git clone https://github.com/arjan-bal/tonic.git
 ```
 * [**Rust**](https://www.rust-lang.org/).
     * Follow installation instructions [here](https://www.rust-lang.org/tools/install).
+* [**Bazel 8.31**](https://bazel.build/).
+    * Follow installation instructions [here](https://github.com/bazelbuild/bazel/releases).
 * [**Protocol buffer**](https://developers.google.com/protocol-buffers) **compiler**, `protoc`, [version 3](https://protobuf.dev/programming-guides/proto3).
     * For installation instructions, see [Protocol Buffer Compiler Installation](https://grpc.io/docs/protoc-installation/).
     * NOTE: Must need a version of Protoc 3.27.1 or higher.
@@ -144,6 +147,7 @@ rpc GetFeature(Point) returns (Feature) {}
 Next we need to generate the gRPC client and server interfaces from our `.proto`
 service definition. 
 
+### Dependencies
 Edit `Cargo.toml` and add all the dependencies we'll need for this example:
 
 ```toml
@@ -194,6 +198,8 @@ protobuf = { version = "4.31.1-release"}
 tonic-protobuf-build = {git = "https://github.com/arjan-bal/tonic.git", branch = "grpc-codegen", package = "tonic-protobuf-build" }
 tonic-build = {git = "https://github.com/arjan-bal/tonic.git", branch = "grpc-codegen", package = "tonic-build" }
 ```
+
+### Compiling and Building Proto  
 Create a `build.rs` file at the root of your crate. A build.rs script is a Rust program that Cargo executes before compiling your main project. Its purpose is to perform tasks like generating source code, linking to non-Rust libraries, or setting environment variables that influence the build process.
 
 In this case, we will be putting the command to compile and build the `.proto` file in build.rs. We will use gRPC's tonic_protobuf_build crate to generate code from the `.proto` file.
