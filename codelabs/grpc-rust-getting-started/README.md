@@ -7,9 +7,9 @@ building distributed systems. No prior gRPC experience needed!
 
 ## How to use this directory
 
-- [start_here](start_here/) directory serves as a starting point for the
+- [start_here](https://github.com/cjqzhao/grpc-codelabs/tree/rustcodelab/codelabs/grpc-rust-getting-started/start_here) directory serves as a starting point for the
 codelab.
-- [completed](completed/) directory showcases the finished code, giving you a
+- [completed](https://github.com/cjqzhao/grpc-codelabs/tree/rustcodelab/codelabs/grpc-rust-getting-started/completed) directory showcases the finished code, giving you a
 peak of how the final implementation should look like.
 
 ## Before you begin
@@ -58,7 +58,7 @@ $ git clone https://github.com/hyperium/tonic.git
 ```
 * [**Rust**](https://www.rust-lang.org/).
     * Follow installation instructions [here](https://www.rust-lang.org/tools/install).
-* [**Bazel 8.31**](https://bazel.build/).
+* [**Bazel 8.3.1**](https://bazel.build/).
     * Follow installation instructions [here](https://github.com/bazelbuild/bazel/releases).
 * [**Protocol buffer**](https://developers.google.com/protocol-buffers) **compiler**, `protoc`, [version 3](https://protobuf.dev/programming-guides/proto3).
     * For installation instructions, see [Protocol Buffer Compiler Installation](https://grpc.io/docs/protoc-installation/).
@@ -76,7 +76,7 @@ $ PLUGIN_PATH="$(pwd)/bazel-bin/src/protoc-gen-rust-grpc"
 export PATH="$(pwd)/bazel-bin/src/:$PATH"
 ```
 
-* Use [this as a starting point](https://download-directory.github.io/?url=https%3A%2F%2Fgithub.com%2Fgrpc-ecosystem%2Fgrpc-codelabs%2Ftree%2Fmain%2Fcodelabs%2Fgrpc-go-getting-started%2Fstart_here) for this codelab.
+* Use [this as a starting point](https://download-directory.github.io/?url=https%3A%2F%2Fgithub.com%2Fcjqzhao%2Fgrpc-codelabs%2Ftree%2Frustcodelab%2Fcodelabs%2Fgrpc-rust-getting-started%2Fstart_here) for this codelab.
 
 ## Defining protobuf messages and services
 
@@ -256,9 +256,7 @@ The generated code is placed inside our target directory, in a location defined 
 environment variable that is set by cargo. For our example, this means you can find the generated
 code in a path similar to `target/debug/build/routeguide/out/routeguide.rs`.
 
-You can learn more about `build.rs` and the `OUT_DIR` environment variable in the [cargo book].
-
-We can use Tonic's `include_proto` macro to bring the generated code into scope:
+We can use gRPC's `include_proto` macro to bring the generated code into scope:
 
 ```rust
 pub mod routeguide {
@@ -276,7 +274,7 @@ With this in place, we can stub out our service implementation:
 
 #### Unary RPC
 
-The `routeGuideServer` implements all our service methods. Let’s look at
+The `RouteGuideService` implements all our service methods. Let’s look at
 `get_feature` which just gets a `Point` from the client and returns the
 corresponding feature information from its database in a `Feature`.
 
@@ -329,11 +327,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 To build and start a server, we:
 
 1. Specify the port we want to use to listen for client requests 
-2. Create a service with features loaded in
+2. Create a `RouteGuideService` with features loaded in
 3. Create an instance of the gRPC server using `RouteGuideServer::new()` using the service we created.
 4. Register our service implementation with the gRPC server.
 5. Call `serve()` on the server with our port details to do a blocking wait
-   until the process is killed or `Stop()` is called.
+   until the process is killed.
 
 ## Creating the client
 
