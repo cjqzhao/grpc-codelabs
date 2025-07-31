@@ -1,5 +1,5 @@
 use tonic::Request;
-use tonic::transport::{Channel, Endpoint}; 
+use tonic::transport::{Endpoint}; 
 use protobuf::proto;
 
 pub mod route_guide_gen {

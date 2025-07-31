@@ -61,7 +61,7 @@ $ git clone https://github.com/hyperium/tonic.git
     * Follow installation instructions [here](https://github.com/bazelbuild/bazel/releases).
 * [**Protocol buffer**](https://developers.google.com/protocol-buffers) **compiler**, `protoc`, [version 3](https://protobuf.dev/programming-guides/proto3).
     * For installation instructions, see [Protocol Buffer Compiler Installation](https://grpc.io/docs/protoc-installation/).
-    * NOTE: Must need a version of Protoc 3.27.1 or higher.
+    * NOTE: Must need a version of Protoc 3.31.1 or higher.
 * **Rust plugins** for the protocol compiler:
 ```sh
 $ cd tonic/protoc-gen-rust-grpc
@@ -172,10 +172,10 @@ default = ["full"]
 # Common dependencies
 tokio = { version = "1.0", features = ["rt-multi-thread", "macros"] }
 prost = "0.14"
-tonic = { git = "https://github.com/arjan-bal/tonic.git", branch = "grpc-codegen" }
-tonic-protobuf = {git = "https://github.com/arjan-bal/tonic.git", branch = "grpc-codegen", package = "tonic-protobuf" }
-grpc = {git = "https://github.com/arjan-bal/tonic.git", branch = "grpc-codegen", package = "grpc"}
-
+tonic = { git = "https://github.com/hyperium/tonic", branch="master"}
+tonic-protobuf = {git = "https://github.com/hyperium/tonic", branch = "master", package = "tonic-protobuf" }
+grpc = {git = "https://github.com/hyperium/tonic", branch = "master", package = "grpc"}
+tonic-prost = {git = "https://github.com/hyperium/tonic", branch = "master", package = "tonic-prost" }
 # Optional dependencies
 async-stream = { version = "0.3", optional = true }
 tokio-stream = { version = "0.1", optional = true }
@@ -194,8 +194,8 @@ tower-http = { version = "0.6", optional = true }
 protobuf = { version = "4.31.1-release"}
 
 [build-dependencies]
-tonic-protobuf-build = {git = "https://github.com/arjan-bal/tonic.git", branch = "grpc-codegen", package = "tonic-protobuf-build" }
-tonic-build = {git = "https://github.com/arjan-bal/tonic.git", branch = "grpc-codegen", package = "tonic-build" }
+tonic-protobuf-build = {git = "https://github.com/hyperium/tonic.git", branch = "master", package = "tonic-protobuf-build" }
+tonic-prost-build = {git = "https://github.com/hyperium/tonic.git", branch = "master", package = "tonic-prost-build" }
 ```
 
 ### Compiling and Building Proto  
@@ -205,13 +205,14 @@ In this case, we will be putting the command to compile and build the `.proto` f
 ```rust
 fn main() {
     let proto = "src/routeguide/routeguide.proto";
-    tonic_build::compile_protos(proto).unwrap();
+    tonic_prost_build::compile_protos(proto).unwrap();
     tonic_protobuf_build::CodeGen::new()
         .include("src/routeguide")
         .inputs(["routeguide.proto"])
-        .generate_and_compile()
+        .compile()
         .unwrap();
 }
+
 ```
 Now, run 
 ```shell

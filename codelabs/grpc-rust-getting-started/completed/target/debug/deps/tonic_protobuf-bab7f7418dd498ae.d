@@ -1,7 +1,0 @@
-/usr/local/google/home/cathyjzhao/grpc-codelabs/codelabs/grpc-rust-getting-started/completed/target/debug/deps/tonic_protobuf-bab7f7418dd498ae.d: /usr/local/google/home/cathyjzhao/.cargo/git/checkouts/tonic-ef39e1752e42773a/4431e83/tonic-protobuf/src/lib.rs
-
-/usr/local/google/home/cathyjzhao/grpc-codelabs/codelabs/grpc-rust-getting-started/completed/target/debug/deps/libtonic_protobuf-bab7f7418dd498ae.rlib: /usr/local/google/home/cathyjzhao/.cargo/git/checkouts/tonic-ef39e1752e42773a/4431e83/tonic-protobuf/src/lib.rs
-
-/usr/local/google/home/cathyjzhao/grpc-codelabs/codelabs/grpc-rust-getting-started/completed/target/debug/deps/libtonic_protobuf-bab7f7418dd498ae.rmeta: /usr/local/google/home/cathyjzhao/.cargo/git/checkouts/tonic-ef39e1752e42773a/4431e83/tonic-protobuf/src/lib.rs
-
-/usr/local/google/home/cathyjzhao/.cargo/git/checkouts/tonic-ef39e1752e42773a/4431e83/tonic-protobuf/src/lib.rs:
