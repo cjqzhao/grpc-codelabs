@@ -11,11 +11,6 @@ use route_guide_gen::{
     Point,
 };
 
-#[derive(Debug, Clone)]
-pub struct RouteGuideAppClient {
-    inner: RouteGuideClient<Channel>,
-}
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     //Create endpoint to connect to

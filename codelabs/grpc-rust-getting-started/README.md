@@ -54,7 +54,6 @@ and easy interface updating.
 * [**Tonic**](https://github.com/hyperium/tonic.git), the open source repository that gRPC-Rust is build off on
 ```sh
 $ git clone https://github.com/hyperium/tonic.git
-// git clone https://github.com/arjan-bal/tonic.git
 ```
 * [**Rust**](https://www.rust-lang.org/).
     * Follow installation instructions [here](https://www.rust-lang.org/tools/install).
