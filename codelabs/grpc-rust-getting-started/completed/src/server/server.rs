@@ -2,22 +2,6 @@ use std::sync::Arc;
 use tonic::transport::Server;
 use tonic::{Request, Response, Status};
 use protobuf::proto;
-// mod grpc_pb {
-//     // Include message code.
-//     include!(concat!(
-//         env!("CARGO_MANIFEST_DIR"),
-//         "/generated/generated.rs"
-//     ));
-//     include!(concat!(
-//         env!("CARGO_MANIFEST_DIR"),
-//         "/generated/routeguide_grpc.pb.rs"
-//     ));
-// }
-
-// use grpc_pb::{
-//     route_guide_server::{RouteGuideServer, RouteGuide},
-//     Point, Feature,
-// };
 
 mod data;
 use data::{Feature, Point, RouteGuide, RouteGuideServer};

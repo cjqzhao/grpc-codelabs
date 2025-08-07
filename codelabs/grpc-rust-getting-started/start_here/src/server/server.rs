@@ -1,4 +1,15 @@
 // use std::sync::Arc;
+// use tonic::transport::Server;
+// use tonic::{Request, Response, Status};
+// use protobuf::proto;
+
+// mod data;
+// use data::{Feature, Point, RouteGuide, RouteGuideServer};
+
+// #[derive(Debug)]
+// pub struct RouteGuideService {
+//     features: Arc<Vec<Feature>>,
+// }
 
 // #[tonic::async_trait]
 // impl RouteGuide for RouteGuideService {
@@ -16,7 +27,7 @@
 // }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     ///////////////////////////////////////////////////////////////////////////
 	// Codelab Hint: Logic for starting up a gRPC Server will be added here.
 	//
@@ -26,3 +37,5 @@ async fn main() {
 	//  -   Register our service implementation with the server.
 	///////////////////////////////////////////////////////////////////////////
 }
+
+
