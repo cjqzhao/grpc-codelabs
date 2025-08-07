@@ -2,11 +2,19 @@ use tonic::Request;
 use tonic::transport::{Endpoint}; 
 use protobuf::proto;
 
-pub mod route_guide_gen {
-    grpc::include_proto!("", "routeguide");
+mod grpc_pb {
+    // Include message code.
+    include!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/generated/generated.rs"
+    ));
+    include!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/generated/routeguide_grpc.pb.rs"
+    ));
 }
 
-use route_guide_gen::{
+use grpc_pb::{
     route_guide_client::RouteGuideClient,
     Point,
 };
@@ -35,3 +43,4 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         response.location().longitude());
     Ok(())
 }
+
